@@ -678,13 +678,11 @@ void predict_jr(matvar_t *plhs[], const matvar_t *prhs[], int *CVSel, int CVSelS
   label_vector_row_num = (int)(prhs[0]->dims[0]); 
   label_vector_col_num = (int)(prhs[0]->dims[1]);
   
-/*
   if(label_vector_row_num!=testing_instance_number)
   {
     printf("Length of label vector does not match # of instances.\n");
     return;
   }
-*/
   if(label_vector_col_num!=1)
   {
     printf("label (1st argument) should be a vector (# of column is 1).\n");

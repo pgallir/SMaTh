@@ -13,18 +13,15 @@ extern "C" {
 #include <errno.h>
 #include "svm.h"
 #include <matio.h>   
-#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
+//#define Malloc(type,n) (type *)malloc((n)*sizeof(type))
 #define Realloc(var,type,n) (type *)realloc(var,(n)*sizeof(type))
 #define ABS(var) (((var) < 0) ? -(var) : (var))
 
 // variables
 extern struct svm_node *x; 
 extern int max_nr_attr; 
-
 extern struct svm_model* model; 
-
 extern int predict_probablity; 
-
 
 // functions
 void exit_with_help();
@@ -43,8 +40,6 @@ void predict_jr(matvar_t *plhs[], const matvar_t *prhs[], int *label_test_select
 matvar_t ** test_model_on_data_subset(const matvar_t *PARAM[], int iTs, int *TestPotentialSelection, int LabelTsCellSize, struct svm_model *model, int predict_probability, int perc_sig);
 matvar_t ** validate_model(const matvar_t *PARAM[], struct svm_model *model, int predict_probability);
 void randperm(int n,int perm[]); // from groups.csail.mit.edu
-
-
 
 #ifdef __cplusplus
 }

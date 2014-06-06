@@ -1,12 +1,25 @@
-CXX = gcc
-CFLAGS = -Wall -Wl,--copy-dt-needed-entries #-g -v -Q -da
-LIB = -lmatio -lz  -lboost_thread 
-all: SvmMatio.o SMaTh
-SMaTh: SMaTh.cpp svm.o SvmMatio.o
-	$(CXX) $(CFLAGS) SMaTh.cpp svm.o SvmMatio.o $(LIB) -o SMaTh -lm
-svm.o: svm.cpp svm.h
+CXX = g++
+CFLAGS = -std=c++0x -Wall -Wl,--copy-dt-needed-entries #-g -v -Q -da
+LIB = -lmatio -lz  -lboost_thread -lm 
+all: clean pippo  
+    # SvmMatio.o SMaTh
+pippo: svm.o Problema.o Job.o
+	$(CXX) $(CFLAGS) pippo.cpp svm.o Job.o Problema.o $(LIB) -o pippo 
+SMaTh: svm.o SvmMatio.o
+	$(CXX) $(CFLAGS) SMaTh.cpp svm.o SvmMatio.o $(LIB) -o SMaTh 
+svm.o:  
 	$(CXX) $(CFLAGS) -c svm.cpp
-SvmMatio.o : SvmMatio.cpp SvmMatio.h svm.o
+SvmMatio.o:
 	$(CXX) $(CFLAGS) -c SvmMatio.cpp
+Problema.o:  
+	$(CXX) $(CFLAGS) -c Problema.cpp  
+Job.o:  
+	$(CXX) $(CFLAGS) -c Job.cpp 
 clean:
-	rm -f *~ *.o *.cpp.* SMaTh
+	rm -f *~ *.o *.cpp.* SMaTh pippo
+reopen: 
+	pkill gvim; make clean; gvim -p * 
+
+
+# how to highlight errors:
+# make 2>&1 | grep -E --color=always 'error|$'

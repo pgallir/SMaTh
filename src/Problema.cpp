@@ -15,7 +15,11 @@ Problema::Problema(string f_pr){
     idxVS = Mat_VarRead(In_MATFILE, "idxVS"); // *** var in matlab WS	
     TrSz = Mat_VarRead(In_MATFILE, "TrSz"); // *** var in matlab WS
     TsSz = Mat_VarRead(In_MATFILE, "TsSz"); // *** var in matlab WS	 
-    // PrintVar();  
+    // 
+    double *ripd=(double*)RIP->data; 
+    RIPD=*ripd; 
+    TrSzD=TrSz->dims[1];
+    TsSzD=TsSz->dims[1]; 
 }
 
 Problema::~Problema(){ 
