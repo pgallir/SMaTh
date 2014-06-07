@@ -3,8 +3,8 @@ CFLAGS = -std=c++0x -Wall -Wl,--copy-dt-needed-entries #-g -v -Q -da
 LIB = -lmatio -lz  -lboost_thread -lm 
 all: clean pippo  
     # SvmMatio.o SMaTh
-pippo: svm.o Problema.o Job.o
-	$(CXX) $(CFLAGS) pippo.cpp svm.o Job.o Problema.o $(LIB) -o pippo 
+pippo: svm.o Problema.o Job.o FunUtili.o
+	$(CXX) $(CFLAGS) pippo.cpp svm.o Job.o Problema.o FunUtili.o $(LIB) -o pippo 
 SMaTh: svm.o SvmMatio.o
 	$(CXX) $(CFLAGS) SMaTh.cpp svm.o SvmMatio.o $(LIB) -o SMaTh 
 svm.o:  
@@ -15,6 +15,8 @@ Problema.o:
 	$(CXX) $(CFLAGS) -c Problema.cpp  
 Job.o:  
 	$(CXX) $(CFLAGS) -c Job.cpp 
+FunUtili.o:
+	$(CXX) $(CFLAGS) -c FunUtili.cpp 
 clean:
 	rm -f *~ *.o *.cpp.* SMaTh pippo
 reopen: 

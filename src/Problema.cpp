@@ -44,3 +44,129 @@ void Problema::SalvoRisultatiSuMatfile(){
     return;  
 }
 
+
+
+//////////////////// DATI SIMULAZIONE ////////////////////////
+
+DatiSimulazione::DatiSimulazione(){
+    problema_assegnato=false; 
+    TrainingSet_assegnato=false;  
+    TestSet_assegnato=false;  
+    LabelTrSelSize=0; 
+    LabelTsSelSize=0; 
+    NumTrBlockSel=0; 
+    NumTrTsBlockSel=0;
+}
+
+
+DatiSimulazione::~DatiSimulazione(){
+    /// XXX usando lo std::vector potrei evitarmelo
+    if (TrainingSet_assegnato==true){
+        delete [] label_training_selection;     
+        delete [] block_selection; 
+    }
+    if (TestSet_assegnato==true)
+        delete [] label_test_selection; 
+}
+
+void DatiSimulazione::assegnoProblema(Problema *pr_){
+    pr=pr_;
+    //
+    Features=pr->Features; 
+    Labels=pr->Labels; 
+    VARIABLEs=pr->VARIABLEs; 
+    RIP=pr->RIP; 
+    idxCV=pr->idxCV; 
+    idxVS=pr->idxVS; 
+    TrSz=pr->TrSz; 
+    TsSz=pr->TsSz; 
+    //
+    TOT_STEPS=idxCV->dims[1]; 
+    trS_=(double*) TrSz->data;
+    tsS_=(double*) TsSz->data; 
+    CellCV = (const matvar_t**) idxCV->data;
+    //
+    problema_assegnato=true; 
+    return;     
+}
+
+void DatiSimulazione::assegnoTrainingSet(int iTr_){
+    // cancello la memoria se sto riassegnando il TrainingSet
+    if (TrainingSet_assegnato==true){ 
+        delete [] block_selection; 
+        delete [] label_training_selection; 
+        LabelTrSelSize=0; 
+        TrainingSet_assegnato=false; 
+    }
+    // assegno il training_set   
+    if (problema_assegnato){
+        iTr=iTr_; // e se eccedo? deve controllarlo Job
+        int i,ii,jj,k; 
+        NumTrBlockSel=(int) (trS_[iTr_]*TOT_STEPS/100);
+        // permute randomly the training selection 
+        block_selection = new int [idxCV->dims[1]]; 
+        FunUtili::randperm((int) idxCV->dims[1],block_selection); 
+        // get the memory dimension of the label I need to allocate
+        for (ii=0; ii<TOT_STEPS; ii++){
+            i = block_selection[ii];  // recupero la cella opportuna dopo che ho fatto il mescolone
+            if (ii<NumTrBlockSel)
+                LabelTrSelSize += CellCV[i]->dims[1];        
+        }
+        label_training_selection = new int [LabelTrSelSize]; 
+        k=0;  
+        for (ii=0; ii<TOT_STEPS; ii++){
+            i = block_selection[ii]; // recupero la cella opportuna dopo che ho fatto il mescolone
+            double *cell = (double*)CellCV[i]->data;
+            if (ii<NumTrBlockSel)
+                for (jj=0; jj<(int)CellCV[i]->dims[1]; jj++)
+                    label_training_selection[k++] = (int)cell[jj];
+        }      
+        TrainingSet_assegnato=true;  
+    }else{
+        fprintf(stderr," Problema non assegnato \n");
+        exit(1);
+    }
+    return ; 
+}
+
+
+
+void DatiSimulazione::assegnoTestSet(int iTs_){
+    // cancello la memoria se sto riassegnando il TestSet
+    if (TestSet_assegnato==true){ 
+        delete [] label_test_selection; 
+        LabelTsSelSize=0; 
+        TestSet_assegnato=false; 
+    }
+    if (problema_assegnato &&
+        TrainingSet_assegnato){
+        iTs=iTs_; // e se eccedo? deve controllarlo Job
+        int i,ii,jj,k; 
+        NumTrTsBlockSel=NumTrBlockSel+
+                        (int) (tsS_[iTs_]*TOT_STEPS/100);
+        if (NumTrTsBlockSel>TOT_STEPS){
+            fprintf(stderr," Training Set + Test Set > 100 %% \n");
+            exit(1);
+        }
+        for (ii=NumTrBlockSel; ii<NumTrTsBlockSel; ii++){
+            i = block_selection[ii];  // recupero la cella opportuna dopo che ho fatto il mescolone
+            LabelTsSelSize += CellCV[i]->dims[1]; 
+        }
+        label_test_selection = new int [LabelTsSelSize];
+        k=0;  
+        for (ii=NumTrBlockSel; ii<NumTrTsBlockSel; ii++){
+            i = block_selection[ii];  // recupero la cella opportuna dopo che ho fatto il mescolone
+            double *cell = (double*)CellCV[i]->data;
+            for (jj=0; jj<(int)CellCV[i]->dims[1]; jj++)
+                label_test_selection[k++] = (int)cell[jj];
+        }      
+        TestSet_assegnato=true;  
+    }else{
+        fprintf(stderr," Problema e(o) TrainingSet non assegnati(o) \n");
+        exit(1);
+    }
+    return ; 
+}
+
+
+

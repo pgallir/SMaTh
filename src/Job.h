@@ -3,28 +3,22 @@
 
 #include "Problema.h"  
 
-namespace FunUtili{
-    void randperm(int n,int perm[]);  // from groups.csail.mit.edu
-    void exit_with_help();
-    void parseArguments(int argc,char **argv,string *filename,double *DimFeatures,double *RipFeatures,double *Label);
-    matvar_t* Mat_VarCreate_jr(const char *NomeVar, int raws, int cols); 
-    void predict_jr(matvar_t *plhs[], const matvar_t *prhs[], int *CVSel, int CVSelSize, struct svm_model *model, const int predict_probability); 
-}
-
-
 class SVModel{
 public: 
     SVModel();
     ~SVModel(); 
-    void initStrutturaDati(int LabelTrSelSize=0,
-                           size_t *FeatSize=NULL,
-                           size_t *LabelSize=NULL,
-                           int *label_training_selection=NULL,
-                           double *f=NULL,
-                           double *l=NULL);
-    void setParam(int argc, char** argv); 
+    void initStrutturaDati(int LabelTrSelSize,int *label_training_selection,        // info sul Training Set
+                           int FeatSelSize,int *feature_sel,                        // info sulle feature da usare
+                           int LabelSelIdx,                                         // info sulla label da usare
+                           double *f,size_t *FeatSize,double *l,size_t *LabelSize); // info su tutto il dataset 
+    void updateParam(struct svm_parameter *param_); 
     void train(); 
-    void predict(matvar_t **RES, const matvar_t *feat, const matvar_t *label, int *label_test_selection, int LabelTsSize);
+    void predict(matvar_t **RES,                                              // contenitore per i risultati
+                 bool VideoPrint,                                             // stampo a video le performances
+                 int LabelSelSize,int *labelSelection,                        // pattern da predirre 
+                 int FeatSelSize,int *featSelection,                          // info sulle feature da usare 
+                 int LabelSelIdx,                                             // info sulla label da usare
+                 double *f,size_t *FeatSize,double *l,size_t *LabelSize);     // info su tutto il dataset 
 private: 
     bool assegnato=false,addestrato=false; 
     struct svm_node *x_space; 
@@ -33,34 +27,14 @@ private:
     struct svm_model *model;
 }; 
 
-class DatiSimulazione{
-public:
-    Problema *pr=NULL; 
-    int LabelTrSelSize=0,LabelTsSelSize=0,iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
-        *label_training_selection=NULL,*label_test_selection=NULL, *block_selection=NULL,
-        *TestPotentialSelection=NULL; 
-    const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;
-    DatiSimulazione(); 
-    ~DatiSimulazione(); 
-    void assegnoTrainingSet(int iTr_);
-    void assegnoTestSet(int iTs_);
-    void assegnoProblema(Problema *pr_); 
-private:
-    int TOT_STEPS=0; 
-    double *trS_, *tsS_; 
-    const matvar_t **CellCV; 
-    bool problema_assegnato=false; 
-    bool TrainingSet_assegnato=false;  
-    bool TestSet_assegnato=false; 
-}; 
+
 
 class Job{    
 public: 
-    int iRip; 
     DatiSimulazione ds; 
     SVModel svm_; 
     matvar_t **RES; 
-    Job(int iRip_,Problema *pr_); 
+    Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_); 
     ~Job(); 
     void run(); 
     void UpdateDatiSimulazione();  
@@ -68,10 +42,14 @@ public:
     void predictTestSet();
 private:     
     string nome="non assegnato"; 
-    bool assegnato_svm=false; 
-    bool assegnatiDatiTraining=false, 
-         assegnatiDatiTest=false; 
-    int TsSize,TrSize,*label_training_selection,*label_test_selection; 
+    struct svm_parameter *param;
+    bool assegnato_svm=false,
+         assegnatiDatiTraining=false, 
+         assegnatiDatiTest=false,
+         Print=false; 
+    int iRip,iFRip,
+        TsSize,FeatSelSize,TrSize, LabelSelIdx,
+        *label_training_selection,*label_test_selection,*feature_sel;
     size_t *FeatSize,*LabelSize; 
     double *features, 
            *labels,
