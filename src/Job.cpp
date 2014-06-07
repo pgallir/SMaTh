@@ -122,6 +122,198 @@ void FunUtili::parseArguments(int argc, char **argv, string *filename, double *D
     }
 }
 
+matvar_t* FunUtili::Mat_VarCreate_jr(const char *NomeVar, int raws, int cols) // solo per double!
+{
+  size_t dims[2] = {(size_t) raws, (size_t) cols};
+  double STUPIDVECTOR[dims[0]*dims[1]];
+  return Mat_VarCreate(NomeVar,MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,STUPIDVECTOR,0); 
+}
+
+void FunUtili::predict_jr(matvar_t *plhs[], const matvar_t *prhs[], int *CVSel, int CVSelSize, struct svm_model *model, const int predict_probability)
+{
+  int label_vector_row_num, label_vector_col_num;
+  int feature_number, testing_instance_number;
+  int instance_index;
+  double *ptr_instance, *ptr_label, *ptr_predict_label; 
+  double *ptr_prob_estimates, *ptr_dec_values, ptr[3];
+  struct svm_node *x;
+
+  int correct = 0;
+  int total = 0;
+  double error = 0;
+  double sump = 0, sumt = 0, sumpp = 0, sumtt = 0, sumpt = 0;
+
+  int svm_type=svm_get_svm_type(model);
+  int nr_class=svm_get_nr_class(model);
+  double *prob_estimates=NULL;
+
+  feature_number = (int)(prhs[1]->dims[1]);
+  testing_instance_number = (int)(prhs[1]->dims[0]);
+  label_vector_row_num = (int)(prhs[0]->dims[0]); 
+  label_vector_col_num = (int)(prhs[0]->dims[1]);
+  
+  if(label_vector_row_num!=testing_instance_number)
+  {
+    printf("Length of label vector does not match # of instances.\n");
+    return;
+  }
+  if(label_vector_col_num!=1)
+  {
+    printf("label (1st argument) should be a vector (# of column is 1).\n");
+    return;
+  }
+
+  ptr_instance = (double *) prhs[1]->data;//mxGetPr(prhs[1]);
+  ptr_label    = (double *) prhs[0]->data;//mxGetPr(prhs[0]);
+
+  /* JR: TO DO THINGs 
+  if(mxIsParse(prhs[1]))
+  {blablablablabla}
+  */
+
+  if(predict_probability)
+  {
+    if(svm_type==NU_SVR || svm_type==EPSILON_SVR)
+      printf("Prob. model for test data: target value = predicted value + z,\nz: Laplace distribution e^(-|z|/sigma)/(2sigma),sigma=%g\n",svm_get_svr_probability(model));
+    else
+      prob_estimates = (double *) malloc(nr_class*sizeof(double));
+  }
+
+
+  // NB: sto settando i valori di uscita?
+  plhs[0] = Mat_VarCreate_jr("Out1", CVSelSize, 1); // JR: MA PORCA TROIA! testing_instance_number sti due coglioni!!
+
+  if(predict_probability)
+    // prob estimates are in plhs[2]
+    if(svm_type==C_SVC || svm_type==NU_SVC)
+      plhs[2] = Mat_VarCreate_jr("Out3", CVSelSize, nr_class);
+    else
+      plhs[2] = Mat_VarCreate_jr("Out3", 0, 0);
+  else
+    // decision values are in plhs[2]
+    if(svm_type == ONE_CLASS ||
+       svm_type == EPSILON_SVR ||
+       svm_type == NU_SVR ||
+       nr_class == 1) // if only one class in training data, decision values are still returned.
+      plhs[2] = Mat_VarCreate_jr("Out3", CVSelSize, 1);
+    else
+      plhs[2] = Mat_VarCreate_jr("Out3", CVSelSize, nr_class*(nr_class-1)/2);
+  
+  // NB: sto facendo puntare i valori di uscita da un puntatore? (per l'assegnamento)
+  ptr_predict_label = (double *) plhs[0]->data;
+  ptr_prob_estimates = (double *) plhs[2]->data; 
+  ptr_dec_values = (double *) plhs[2]->data;
+  x = (struct svm_node*)malloc((feature_number+1)*sizeof(struct svm_node) );
+
+  // JR: VA FATTO UN WRAPPER PER LA LETTURA DEI DATI!
+  for(int ii=0; ii<CVSelSize; ii++)
+  //for(instance_index=0;instance_index<testing_instance_number;instance_index++)
+  { 
+    instance_index = CVSel[ii]; 
+    int i;
+    double target_label, predict_label;
+    target_label = ptr_label[instance_index];
+    if(0)// JR:mxIsSparse(prhs[1]) && model->param.kernel_type != PRECOMPUTED) // prhs[1]^T is still sparse
+      printf("SE HO VOGLIA aggiusto per matrici sparse"); //read_sparse_instance(plhs[0], instance_index, x);
+    else
+    {
+      for(i=0;i<feature_number;i++)
+      {
+	// NB: assegno ad x i valori puntatida ptr_instance
+	x[i].index = i+1;
+	x[i].value =  ptr_instance[testing_instance_number*i+instance_index]; // ptr_instance[testing_instance_number*i+instance_index];
+      }
+      x[feature_number].index = -1;
+    }
+    if(predict_probability)
+    {
+      if(svm_type==C_SVC || svm_type==NU_SVC)
+      {
+	predict_label = svm_predict_probability(model, x, prob_estimates);
+	//ptr_predict_label[instance_index] = predict_label;
+        ptr_predict_label[ii] = predict_label;
+	for(i=0;i<nr_class;i++)
+	  //ptr_prob_estimates[instance_index + i * testing_instance_number] = prob_estimates[i];
+          ptr_prob_estimates[ii] = prob_estimates[i];
+      } else {
+	predict_label = svm_predict(model,x);
+	//ptr_predict_label[instance_index] = predict_label;
+        ptr_predict_label[ii] = predict_label;
+      }
+    }
+    else
+    {
+      if(svm_type == ONE_CLASS ||
+         svm_type == EPSILON_SVR ||
+         svm_type == NU_SVR)
+      {
+	double res;
+	predict_label = svm_predict_values(model, x, &res);
+	//ptr_dec_values[instance_index] = res;
+        ptr_dec_values[ii] = res;
+      }
+      else
+      {
+	double *dec_values = (double *) malloc(sizeof(double) * nr_class*(nr_class-1)/2);
+	predict_label = svm_predict_values(model, x, dec_values);
+	if(nr_class == 1) 
+	  //ptr_dec_values[instance_index] = 1;
+          ptr_dec_values[ii] = 1;
+	else
+	  for(i=0;i<(nr_class*(nr_class-1))/2;i++)
+	    //ptr_dec_values[instance_index + i * testing_instance_number] = dec_values[i];
+            ptr_dec_values[ii] = dec_values[i];
+	free(dec_values);
+      }
+      //ptr_predict_label[instance_index] = predict_label;
+      ptr_predict_label[ii] = predict_label;
+    }
+    if(predict_label == target_label)
+      ++correct;
+    error += (predict_label-target_label)*(predict_label-target_label);
+    sump += predict_label;
+    sumt += target_label;
+    sumpp += predict_label*predict_label;
+    sumtt += target_label*target_label;
+    sumpt += predict_label*target_label;
+    ++total;
+  }
+/*
+  // print stuff
+  if(svm_type==NU_SVR || svm_type==EPSILON_SVR)
+  {
+    printf("Mean squared error = %g (regression)\n",error/total);
+    printf("Squared correlation coefficient = %g (regression)\n",
+      ((total*sumpt-sump*sumt)*(total*sumpt-sump*sumt))/
+      ((total*sumpp-sump*sump)*(total*sumtt-sumt*sumt))
+      );
+  }
+  else
+    printf("Accuracy = %g%% (%d/%d) (classification)\n",
+      (double)correct/total*100,correct,total);
+*/
+  // return accuracy, mean squared error, squared correlation coefficient
+  size_t dims[2];
+  dims[0] = 3; 
+  dims[1] = 1;
+  ptr[0] = (double)correct/total*100;
+  ptr[1] = (double)error/total;
+  ptr[2] = (double)(((total*sumpt-sump*sumt)*(total*sumpt-sump*sumt))/
+	            ((total*sumpp-sump*sump)*(total*sumtt-sumt*sumt)));
+  plhs[1] = Mat_VarCreate("Out2",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,ptr,0); // JR: da mettere un nome vero
+
+  // free memory
+  free(x);
+  ptr_label=NULL;free(ptr_label);
+  ptr_predict_label=NULL;free(ptr_predict_label);
+  ptr_prob_estimates=NULL;free(ptr_prob_estimates);
+  ptr_dec_values=NULL;free(ptr_dec_values);
+
+  if(prob_estimates != NULL)
+    free(prob_estimates);
+}
+
+
 
 //////////////////// SVModel ////////////////////////
 
@@ -156,6 +348,7 @@ SVModel::~SVModel(){
     if (addestrato){
         delete [] model; 
     }
+    svm_destroy_param(&param);
 }
 
 
@@ -224,42 +417,88 @@ void SVModel::setParam(int argc, char** argv){
 }
 
 void SVModel::initStrutturaDati(int LabelTrSelSize,size_t *FeatSize,size_t *LabelSize,int *label_training_selection,double *f,double *l){
-    int elements,i,ii,k; 
-    size_t j,max_index; 
-    // set dimensions problem
-    prob.l = LabelTrSelSize;				      // #labels
-    // JR: ATTENZIONE QUI!
-    elements = prob.l*(1+FeatSize[1]);  //(FeatSize[0]+FeatSize[1]); // #labels (1 + #features)
-    // cout << prob.l << " " << FeatSize[0] << " " << FeatSize[1] << endl; 
+	int i, ii, j, k;
+	int elements, max_index, sc, label_vector_row_num, featsize;
+	double *samples, *labels;
 
-    max_index = FeatSize[1];    // #features  -- here only a full matrix had been considered
-    // allocate enough memory
-    prob.y = new double [prob.l];
+	prob.x = NULL;
+	prob.y = NULL;
+	x_space = NULL;
+
+	labels = l;
+	samples = f;
+	sc = (int)FeatSize[1];
+
+	elements = 0;
+	// the number of instance
+	prob.l = LabelTrSelSize;
+    featsize = (int)FeatSize[0];
+	label_vector_row_num = (int)LabelSize[0]; 
+
+	if(label_vector_row_num!=featsize)
+	{
+		fprintf(stderr,"#Labels != #Features!!!");
+		exit(1);
+	}
+	if(param.kernel_type == PRECOMPUTED)
+		elements = prob.l * (sc + 1);
+	else
+	{
+		for(ii = 0; ii < prob.l; ii++)
+		{
+            i=label_training_selection[ii]; 
+			for(k = 0; k < sc; k++)
+				if(samples[k * prob.l + i] != 0)
+					elements++;
+			// count the '-1' element
+			elements++;
+		}
+	}
+
+    prob.y = new double [prob.l]; 
     prob.x = new struct svm_node* [prob.l]; 
     x_space = new struct svm_node [elements]; 
-    // riempio la struttura 
-    k=0; // init # svm-s
-    for (ii=0; ii<prob.l; ii++){ // run labels over label_training_selection indexes
-        // get the proper pattern index
-        i = label_training_selection[ii];
-        // set prob fields
-        prob.y[ii] = l[i];
-        prob.x[ii] = &x_space[k]; 
-        for (j=0; j<FeatSize[1]; j++){ // run features
-            x_space[k].index = (long int)(j+1); 
-            x_space[k].value = f[j*LabelSize[0]+i];
-            ++k; 
-        }
-        x_space[k++].index = -1; // end of each little problem
-    }   
-    if(param.gamma == 0 && max_index > 0)
-        param.gamma = 1.0/max_index;
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // if(param.kernel_type == PRECOMPUTED)
-        // return "I do NOT consider a precumputed kernel_type by now";	
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // 
+	max_index = sc;
+	j = 0;
+	for(ii = 0; ii < prob.l; ii++)
+	{
+        i=label_training_selection[ii]; 
+		prob.x[ii] = &x_space[j];
+		prob.y[ii] = labels[i];
+
+		for(k = 0; k < sc; k++)
+		{
+			if(param.kernel_type == PRECOMPUTED || samples[k * prob.l + i] != 0)
+			{
+				x_space[j].index = k + 1;
+				x_space[j].value = samples[k * prob.l + i];
+				j++;
+			}
+		}
+		x_space[j++].index = -1;
+	}
+
+	if(param.gamma == 0 && max_index > 0)
+		param.gamma = 1.0/max_index;
+
+	if(param.kernel_type == PRECOMPUTED)
+		for(ii=0; ii<prob.l; ii++)
+		{
+			if((int)prob.x[ii][0].value <= 0 || (int)prob.x[ii][0].value > max_index)
+			{
+				fprintf(stderr,"Wrong input format: sample_serial_number out of range\n");
+				exit(1);
+			}
+		}
+    const char* error_msg = svm_check_parameter(&prob, &param);
+    if(error_msg)
+    {
+        if (error_msg != NULL)
+            fprintf(stderr,"Errore: %s\n", error_msg);
+        exit(1); 
+    }
+    //     
     assegnato=true; 
 }
 
@@ -269,65 +508,11 @@ void SVModel::train(){
     addestrato=true; 
 }
 
-void SVModel::predict(matvar_t **RES, const matvar_t *Features, const matvar_t *Labels, int *label_test_selection){
+void SVModel::predict(matvar_t **RES, const matvar_t *Features, const matvar_t *Labels, int *labelSelection, int LabelSize){
     const matvar_t *INPUTs[2]; 
     INPUTs[0] = Labels; 
     INPUTs[1] = Features; 
-    //FunUtili::predict_jr(RES,INPUTs,label_test_selection,model,0); 
-
-    cout<<"fingiamo "<< (int) sizeof(label_test_selection)/sizeof(int)<<endl;
-
-
-
-//    predict_jr((matvar_t **) RES, (const matvar_t **)INPUTs, label_test_selection, LabelVlSelSize, model, int(0)); //JR: predict_probability sempre == 0
-
-/*
-matvar_t** validate_model(const matvar_t *PARAM[], struct svm_model *model, int predict_probability)
-{
-  //PARs:={Features, Labels, VARIABLEs, RIP, idxCV, idxVS, TrSz, TsSz}
-  const matvar_t *Features = PARAM[0];	// features matrix
-  const matvar_t *Labels = PARAM[1]; 	// label vector (matrix??) for the different variables
-  //const matvar_t *VARIABLEs = PARAM[2];	// cells containing variables names
-  //const matvar_t *RIP = PARAM[3]; 	// #repetition of CV
-  //const matvar_t *BlockCV = PARAM[4]; 	// cell containing the CROSS VALIDATION indexes subdivision
-  //const matvar_t **Cell = (const matvar_t**) BlockCV->data;
-  const matvar_t *BlockVS = PARAM[5]; 	// cell containing the VALIDATION SET indexes subdivision
-  const matvar_t **CellV = (const matvar_t**) BlockVS->data;
-  //const matvar_t *trS = PARAM[6]; 	// # of BlockCV cells to be used for training the svm model
-  //const matvar_t *tsS = PARAM[7]; 	// # of BlockCV cells to be used for test the svm model
-
-  int i, j, k, *label_test_selection, LabelVlSelSize=0;
-
-  // get the memory dimension of the label I need to allocate for label_test_selection
-  k=0; 
-  for (i=0; i<(int)BlockVS->dims[1]; i++)
-  {     
-    LabelVlSelSize += CellV[i]->dims[1];
-  }
-  label_test_selection = Malloc(int, LabelVlSelSize);
-  for (i=0; i<(int)BlockVS->dims[1]; i++)
-  {
-    double *cell = (double*)CellV[i]->data;
-    for (j=0; j<(int)CellV[i]->dims[1]; j++)
-      label_test_selection[k++] = (int)cell[j];
-  }
-
-  // do the prediction
-  matvar_t **RES = Malloc(matvar_t*,3);
-  const matvar_t *INPUTs[2]; 
-  INPUTs[0] = Labels; 
-  INPUTs[1] = Features; 
-  predict_jr((matvar_t **) RES, (const matvar_t **)INPUTs, label_test_selection, LabelVlSelSize, model, int(0)); //JR: predict_probability sempre == 0
-
-  //remember to free your allocated memory
-  free(label_test_selection);
-
-  return RES;   
-}
-
-
-*/
-
+    FunUtili::predict_jr(RES,INPUTs,labelSelection,LabelSize,model,0); 
 }
 
 //////////////////// DATI SIMULAZIONE ////////////////////////
@@ -338,6 +523,8 @@ DatiSimulazione::DatiSimulazione(){
     TestSet_assegnato=false;  
     LabelTrSelSize=0; 
     LabelTsSelSize=0; 
+    NumTrBlockSel=0; 
+    NumTrTsBlockSel=0;
 }
 
 
@@ -374,17 +561,16 @@ void DatiSimulazione::assegnoProblema(Problema *pr_){
 
 void DatiSimulazione::assegnoTrainingSet(int iTr_){
     // cancello la memoria se sto riassegnando il TrainingSet
-    /*
     if (TrainingSet_assegnato==true){ 
         delete [] block_selection; 
         delete [] label_training_selection; 
-        cout << "FATTO"<<endl;
+        LabelTrSelSize=0; 
+        TrainingSet_assegnato=false; 
     }
-    */
     // assegno il training_set   
     if (problema_assegnato){
         iTr=iTr_; // e se eccedo? deve controllarlo Job
-        int i,ii,jj,k,NumTrBlockSel; 
+        int i,ii,jj,k; 
         NumTrBlockSel=(int) (trS_[iTr_]*TOT_STEPS/100);
         // permute randomly the training selection 
         block_selection = new int [idxCV->dims[1]]; 
@@ -416,35 +602,32 @@ void DatiSimulazione::assegnoTrainingSet(int iTr_){
 
 void DatiSimulazione::assegnoTestSet(int iTs_){
     // cancello la memoria se sto riassegnando il TestSet
-    if (TrainingSet_assegnato==true){ 
+    if (TestSet_assegnato==true){ 
         delete [] label_test_selection; 
+        LabelTsSelSize=0; 
+        TestSet_assegnato=false; 
     }
     if (problema_assegnato &&
         TrainingSet_assegnato){
         iTs=iTs_; // e se eccedo? deve controllarlo Job
-        int i,ii,jj,k,
-            NumTrBlockSel,NumTrTsBlockSel; 
-        NumTrBlockSel=(int) (trS_[iTr]*TOT_STEPS/100);
-        NumTrTsBlockSel=NumTrBlockSel+ (int) (tsS_[iTs_]*TOT_STEPS/100);
+        int i,ii,jj,k; 
+        NumTrTsBlockSel=NumTrBlockSel+
+                        (int) (tsS_[iTs_]*TOT_STEPS/100);
         if (NumTrTsBlockSel>TOT_STEPS){
             fprintf(stderr," Training Set + Test Set > 100 %% \n");
             exit(1);
         }
-        for (ii=0; ii<TOT_STEPS; ii++){
+        for (ii=NumTrBlockSel; ii<NumTrTsBlockSel; ii++){
             i = block_selection[ii];  // recupero la cella opportuna dopo che ho fatto il mescolone
-            if (ii>=NumTrBlockSel &&
-                ii<NumTrTsBlockSel)
-                LabelTsSelSize += CellCV[i]->dims[1]; 
+            LabelTsSelSize += CellCV[i]->dims[1]; 
         }
         label_test_selection = new int [LabelTsSelSize];
         k=0;  
-        for (ii=0; ii<TOT_STEPS; ii++){
+        for (ii=NumTrBlockSel; ii<NumTrTsBlockSel; ii++){
             i = block_selection[ii];  // recupero la cella opportuna dopo che ho fatto il mescolone
             double *cell = (double*)CellCV[i]->data;
-            if (ii>=NumTrBlockSel && 
-                ii<NumTrTsBlockSel)
-                for (jj=0; jj<(int)CellCV[i]->dims[1]; jj++)
-                    label_test_selection[k++] = (int)cell[jj];
+            for (jj=0; jj<(int)CellCV[i]->dims[1]; jj++)
+                label_test_selection[k++] = (int)cell[jj];
         }      
         TestSet_assegnato=true;  
     }else{
@@ -453,58 +636,6 @@ void DatiSimulazione::assegnoTestSet(int iTs_){
     }
     return ; 
 }
-
-
-
-
-/* NON DOVREBBE SERVIRE PIU'
-DatiSimulazione::DatiSimulazione(Problema *pr_,int iTr_,int iTs_){
-    iTr=iTr_; 
-    iTs=iTs_; 
-    pr=pr_;
-    AssegnoIlProblema();     
-    assegnato=true; 
-    // 
-    const matvar_t **Cell = (const matvar_t**) idxCV->data;
-    int i,ii,jj,k,k2,TOT_STEPS=idxCV->dims[1],
-        NumTrBlockSel,NumTrTsBlockSel,block_selection[idxCV->dims[1]]; 
-    double *trS_=(double*) TrSz->data, 
-           *tsS_=(double*) TsSz->data; 
-    NumTrBlockSel=(int) (trS_[iTr_]*TOT_STEPS/100);
-    NumTrTsBlockSel=NumTrBlockSel+ (int) (tsS_[iTs_]*TOT_STEPS/100);
-    if (NumTrTsBlockSel>TOT_STEPS)
-        cout << endl << "QUESTO NON DEVE ACCADERE MAI!" << endl; 
-    // permute randomly the training selection 
-    FunUtili::randperm((int) idxCV->dims[1],block_selection); 
-    // get the memory dimension of the label I need to allocate
-    for (ii=0; ii<TOT_STEPS; ii++){
-        if (ii<NumTrBlockSel)
-            LabelTrSelSize += Cell[ii]->dims[1];
-        else if (ii<NumTrTsBlockSel)
-            LabelTsSelSize += Cell[ii]->dims[1]; 
-    }
-    // allocate memory abd assign block of {training,test} patterns
-    // LabelTsCellSize = idxCV->dims[1] - nRPsel; // number of block remained from training phase
-    label_training_selection = new int [LabelTrSelSize]; 
-    label_test_selection = new int [LabelTsSelSize];
-    //TestPotentialSelection = new int [LabelTsCellSize]; 
-    k=0; k2=0;  
-    for (ii=0; ii<(int)idxCV->dims[1]; ii++){
-        i = block_selection[ii]; 
-        double *cell = (double*)Cell[i]->data;
-        if (ii<NumTrBlockSel)
-            for (jj=0; jj<(int)Cell[i]->dims[1]; jj++)
-                label_training_selection[k++] = (int)cell[jj];
-        else if (ii<NumTrTsBlockSel)
-            for (jj=0; jj<(int)Cell[i]->dims[1]; jj++)
-                label_test_selection[k2++] = (int)cell[jj];
-            //TestPotentialSelection[j++] = i;
-    }    
-}
-*/
-
-
-
 
 //////////////////// JOB ////////////////////////
 
@@ -555,8 +686,7 @@ void Job::TrainingFromAssignedProblem(){
 
 void Job::predictTestSet(){ 
     if (assegnato_svm){
-        // leggo il problema per addestrare il modello svm 
-        svm_.predict(RES,ds.Features,ds.Labels,ds.label_test_selection);
+        svm_.predict(RES,ds.Features,ds.Labels,ds.label_test_selection,ds.LabelTsSelSize);
     }else{
         fprintf(stderr,"Non ho addestrato un modello svm\n");
         exit(1);       
@@ -566,29 +696,31 @@ void Job::predictTestSet(){
 
 
 void Job::run(){
-    cout << "-- new run -- iRip==" << iRip << endl;  
+    cout << endl << "-- new run -- iRip==" << iRip << endl;  
     UpdateDatiSimulazione(); // una volta all'inizio e basta 
     int iTr=0,trsz=ds.pr->TrSzD, 
         iTs=0,tssz=ds.pr->TsSzD;  
+
+/*
+    // Funziona, sembra almeno... 
+    ds.assegnoTrainingSet(iTr);  
+    ds.assegnoTestSet(tssz-1);  
+    cout << "LabelTsSelSize " << ds.LabelTsSelSize << endl; 
+    for (int i=0; i<ds.LabelTsSelSize; ++i)
+        cout << " " << ds.label_test_selection[i] << ":" << features[ds.label_test_selection[i]];
+    cout << endl;  
+    TrainingFromAssignedProblem();    
+    predictTestSet();
+*/
+
     for (iTr=0; iTr<1/*trsz*/; ++iTr){
         assegnato_svm=false; // devo addestrare per ogni Training Set un nuovo modello 
         ds.assegnoTrainingSet(iTr);  
-        /*
-        // Funziona, sembra almeno... 
-        cout << " " << ds.LabelTrSelSize << endl; 
-        for (int i=0; i<ds.LabelTrSelSize; ++i)
-            cout << " " << ds.label_training_selection[i] << ":" << features[ds.label_training_selection[i]];
-        */    
-        // addestro
-        TrainingFromAssignedProblem(); 
-/*        
+        TrainingFromAssignedProblem(); // addestro
         for (iTs=0; iTs<tssz; ++iTs){
-            // assegno il Test Set
             ds.assegnoTestSet(iTs);
-            cout << "testo qui " << iTs<< endl;  
             predictTestSet(); 
         }
-*/
     }
     return; 
 }	

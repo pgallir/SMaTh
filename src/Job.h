@@ -7,6 +7,8 @@ namespace FunUtili{
     void randperm(int n,int perm[]);  // from groups.csail.mit.edu
     void exit_with_help();
     void parseArguments(int argc,char **argv,string *filename,double *DimFeatures,double *RipFeatures,double *Label);
+    matvar_t* Mat_VarCreate_jr(const char *NomeVar, int raws, int cols); 
+    void predict_jr(matvar_t *plhs[], const matvar_t *prhs[], int *CVSel, int CVSelSize, struct svm_model *model, const int predict_probability); 
 }
 
 
@@ -22,7 +24,7 @@ public:
                            double *l=NULL);
     void setParam(int argc, char** argv); 
     void train(); 
-    void predict(matvar_t **RES, const matvar_t *feat, const matvar_t *label, int *label_test_selection);
+    void predict(matvar_t **RES, const matvar_t *feat, const matvar_t *label, int *label_test_selection, int LabelTsSize);
 private: 
     bool assegnato=false,addestrato=false; 
     struct svm_node *x_space; 
@@ -34,7 +36,7 @@ private:
 class DatiSimulazione{
 public:
     Problema *pr=NULL; 
-    int LabelTrSelSize=0,LabelTsSelSize=0,iTr=0,iTs=0, 
+    int LabelTrSelSize=0,LabelTsSelSize=0,iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
         *label_training_selection=NULL,*label_test_selection=NULL, *block_selection=NULL,
         *TestPotentialSelection=NULL; 
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;

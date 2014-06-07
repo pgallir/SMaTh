@@ -29,18 +29,6 @@ int main(int argc, char** argv)
         j.run(); 
     }
 
-/*
-    Job j_[10]; 
-    for (int iRip=0; iRip<10; iRip++){
-        j_[iRip].iRip=iRip; 
-        j_[iRip].AssegnoDatiSimulazione(ds_); 
-        // parse dei parametri
-    }
-    // faccio roba 
-    // j_[0].run(); 
-    //cout << "nome " << j_[0].nome << " rip " << j_[0].iRip << endl; 
-*/
-
     return 0; 
 } 
 	
