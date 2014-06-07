@@ -226,24 +226,25 @@ void FunUtili::predict_jr(matvar_t *plhs[],double *f,size_t *FeatSize,double *l,
     }
 
     // setto l'uscita
-    plhs[0] = Mat_VarCreate_jr("Out1", testing_instance_number, 1); 
+    plhs[0] = Mat_VarCreate_jr("PredictedLabel", testing_instance_number, 1); 
 
-    if(predict_probability)
+    if(predict_probability){
         // prob estimates are in plhs[2]
         if(svm_type==C_SVC || svm_type==NU_SVC)
-           plhs[2] = Mat_VarCreate_jr("Out3", testing_instance_number, nr_class);
+           plhs[2] = Mat_VarCreate_jr("ProbabilityEstimates", testing_instance_number, nr_class);
         else
-            plhs[2] = Mat_VarCreate_jr("Out3", 0, 0);
-    else
+            plhs[2] = Mat_VarCreate_jr("ProbabilityEstimates", 0, 0);
+    }else{
         // decision values are in plhs[2]
         if(svm_type == ONE_CLASS ||
            svm_type == EPSILON_SVR ||
            svm_type == NU_SVR ||
            nr_class == 1) // if only one class in training data, decision values are still returned.
-            plhs[2] = Mat_VarCreate_jr("Out3", testing_instance_number, 1);
-    else
-      plhs[2] = Mat_VarCreate_jr("Out3", testing_instance_number, nr_class*(nr_class-1)/2);
-  
+            plhs[2] = Mat_VarCreate_jr("DecisionValues", testing_instance_number, 1);
+        else
+            plhs[2] = Mat_VarCreate_jr("DecisionValues", testing_instance_number, nr_class*(nr_class-1)/2);
+    }
+
     // punto il campo data delle variabili da salvare in uscita 
     ptr_predict_label = (double *) plhs[0]->data;
     ptr_prob_estimates = (double *) plhs[2]->data; 
@@ -338,7 +339,7 @@ void FunUtili::predict_jr(matvar_t *plhs[],double *f,size_t *FeatSize,double *l,
     ptr[1] = (double)error/total;
     ptr[2] = (double)(((total*sumpt-sump*sumt)*(total*sumpt-sump*sumt))/
              ((total*sumpp-sump*sump)*(total*sumtt-sumt*sumt)));
-    plhs[1] = Mat_VarCreate("Out2",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,ptr,0); // JR: da mettere un nome vero
+    plhs[1] = Mat_VarCreate("ACC_MSE_SCC",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,ptr,0); // JR: da mettere un nome vero
 
     // libero memoria 
     delete [] x; 

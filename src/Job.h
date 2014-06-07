@@ -28,20 +28,23 @@ private:
 }; 
 
 
-
 class Job{    
 public: 
     DatiSimulazione ds; 
     SVModel svm_; 
     matvar_t **RES; 
-    Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_); 
+    Job(int iRip_,Problema *pr_,
+        int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,
+        bool Print_, struct svm_parameter param_,
+        string resFile_); 
     ~Job(); 
     void run(); 
     void UpdateDatiSimulazione();  
     void TrainingFromAssignedProblem(); 
     void predictTestSet();
+    void predictValidationSet(double ***ValidTrend,int iTr_); 
 private:     
-    string nome="non assegnato"; 
+    string nome="non assegnato",resFile; 
     struct svm_parameter *param;
     bool assegnato_svm=false,
          assegnatiDatiTraining=false, 

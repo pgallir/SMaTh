@@ -1,12 +1,12 @@
 CXX = g++
 CFLAGS = -std=c++0x -Wall -Wl,--copy-dt-needed-entries #-g -v -Q -da
 LIB = -lmatio -lz  -lboost_thread -lm 
-all: clean pippo  
+all: clean SMaTh 
     # SvmMatio.o SMaTh
-pippo: svm.o Problema.o Job.o FunUtili.o
-	$(CXX) $(CFLAGS) pippo.cpp svm.o Job.o Problema.o FunUtili.o $(LIB) -o pippo 
-SMaTh: svm.o SvmMatio.o
-	$(CXX) $(CFLAGS) SMaTh.cpp svm.o SvmMatio.o $(LIB) -o SMaTh 
+SMaTh: svm.o Problema.o Job.o FunUtili.o
+	$(CXX) $(CFLAGS) SMaTh.cpp svm.o Job.o Problema.o FunUtili.o $(LIB) -o SMaTh 
+SMaTh_old: svm.o SvmMatio.o
+	$(CXX) $(CFLAGS) SMaTh_old.cpp svm.o SvmMatio.o $(LIB) -o SMaTh 
 svm.o:  
 	$(CXX) $(CFLAGS) -c svm.cpp
 SvmMatio.o:
@@ -18,7 +18,7 @@ Job.o:
 FunUtili.o:
 	$(CXX) $(CFLAGS) -c FunUtili.cpp 
 clean:
-	rm -f *~ *.o *.cpp.* SMaTh pippo
+	rm -f *~ *.o *.cpp.* SMaTh 
 reopen: 
 	pkill gvim; make clean; gvim -p * 
 

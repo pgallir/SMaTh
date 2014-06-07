@@ -34,14 +34,13 @@ class Problema{
 public: 
     string nome; 
     Problema(string f_pr); 
-    int RIPD=0,TrSzD=0,TsSzD=0; 
+    int RIPD=0,TrSzD=0,TsSzD=0,ValidationDimension=0; 
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;   
     ~Problema(); 
     void PrintVar(); 
 protected: 
     void SalvoRisultatiSuMatfile();    // qui salvo i risultati come si aspetta chi legge i .mat
 }; 
-
 
 
 class DatiSimulazione{
@@ -59,7 +58,7 @@ public:
 private:
     int TOT_STEPS=0; 
     double *trS_, *tsS_; 
-    const matvar_t **CellCV; 
+    const matvar_t **CellCV, **CellVS; 
     bool problema_assegnato=false; 
     bool TrainingSet_assegnato=false;  
     bool TestSet_assegnato=false; 

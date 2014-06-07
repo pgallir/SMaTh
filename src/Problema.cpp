@@ -15,11 +15,16 @@ Problema::Problema(string f_pr){
     idxVS = Mat_VarRead(In_MATFILE, "idxVS"); // *** var in matlab WS	
     TrSz = Mat_VarRead(In_MATFILE, "TrSz"); // *** var in matlab WS
     TsSz = Mat_VarRead(In_MATFILE, "TsSz"); // *** var in matlab WS	 
+    Mat_Close(In_MATFILE);
     // 
     double *ripd=(double*)RIP->data; 
     RIPD=*ripd; 
     TrSzD=TrSz->dims[1];
     TsSzD=TsSz->dims[1]; 
+    ValidationDimension=0; 
+    const matvar_t **CellVS = (const matvar_t**) idxCV->data;
+    for (int i=0; i<(int)idxCV->dims[1]; ++i)
+        ValidationDimension+=(int) CellVS[i]->dims[1];        
 }
 
 Problema::~Problema(){ 
@@ -85,6 +90,7 @@ void DatiSimulazione::assegnoProblema(Problema *pr_){
     trS_=(double*) TrSz->data;
     tsS_=(double*) TsSz->data; 
     CellCV = (const matvar_t**) idxCV->data;
+    CellVS = (const matvar_t**) idxVS->data;
     //
     problema_assegnato=true; 
     return;     

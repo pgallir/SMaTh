@@ -191,13 +191,13 @@ void SVModel::predict(matvar_t **RES,                                           
 
 //////////////////// JOB ////////////////////////
 
-Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_){
+Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_, string resFile_){
     assegnato_svm=false;
     assegnatiDatiTraining=false; 
     assegnatiDatiTest=false;    
     Print=Print_; 
     //
-    *param=param_;
+    param=&param_; 
     iRip=iRip_;
     iFRip=FeatSelRip_; 
     LabelSelIdx=LabelSelIdx_; 
@@ -232,7 +232,17 @@ Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelId
     else
         LabelSelIdx=LabelSelIdx_; 
     //
-    nome=ds.pr->nome;
+    nome=ds.pr->nome; 
+    nome.erase(nome.begin(),nome.begin()+8);
+    resFile="../data/res-iRip_";  resFile+=to_string(iRip); resFile+="-";  
+    /*
+           resFile+="-iVar_";    resFile+=to_string(LabelSelIdx);
+           resFile+="-nFeat_";   resFile+=to_string(FeatSelSize); 
+           resFile+="-ripFeat_"; resFile+=to_string(iFRip); 
+    */
+    resFile+=nome; 
+    if (resFile_!="puppa.mat")
+        resFile=resFile_; 
     //
     RES = new matvar_t* [3];
 }
@@ -278,6 +288,24 @@ void Job::TrainingFromAssignedProblem(){
 }
 
 
+void Job::predictValidationSet(double ***ValidTrend,int iTr_){
+    if (assegnato_svm){
+        /*
+        svm_.predict(RES,                                           // contenitore per i risultati
+                     Print,                                         // stampo a video le performances
+                     ds.LabelTsSelSize,ds.label_test_selection,     // info sul Test Set 
+                     FeatSelSize,feature_sel,                       // info sulle feature da usare 
+                     LabelSelIdx,                                   // info sulla label da usare
+                     features,FeatSize,labels,LabelSize);           // info su tutto il dataset
+          */               
+    }else{
+        fprintf(stderr,"Non ho addestrato un modello svm\n");
+        exit(1);       
+    }
+    return ; 
+}
+
+
 void Job::predictTestSet(){ 
     if (assegnato_svm){
         svm_.predict(RES,                                           // contenitore per i risultati
@@ -286,7 +314,6 @@ void Job::predictTestSet(){
                      FeatSelSize,feature_sel,                       // info sulle feature da usare 
                      LabelSelIdx,                                   // info sulla label da usare
                      features,FeatSize,labels,LabelSize);           // info su tutto il dataset
-                         
     }else{
         fprintf(stderr,"Non ho addestrato un modello svm\n");
         exit(1);       
@@ -297,17 +324,44 @@ void Job::predictTestSet(){
 
 void Job::run(){
     cout << endl << "-- new run -- iRip==" << iRip << endl;  
-    int iTr=0,trsz=ds.pr->TrSzD, 
-        iTs=0,tssz=ds.pr->TsSzD;  
+    //
+    int iTr=0,iTs=0,i, 
+        trsz=ds.pr->TrSzD, tssz=ds.pr->TsSzD, valdim=ds.pr->ValidationDimension; 
+    double acc[trsz][tssz], mse[trsz][tssz], scc[trsz][tssz],
+           *res,*pLabels,*act_label; 
+    act_label = new double [valdim];
+
     for (iTr=0; iTr<trsz; ++iTr){
         assegnato_svm=false; // devo addestrare per ogni Training Set un nuovo modello 
         ds.assegnoTrainingSet(iTr);  
         TrainingFromAssignedProblem(); // addestro
+        //predictValidationSet(&ValidTrend,iTr); // Test sul Validation Set
         for (iTs=0; iTs<tssz; ++iTs){
             ds.assegnoTestSet(iTs);
             predictTestSet(); 
+            //
+            res = (double *)((matvar_t *)RES[1])->data; 
+            acc[iTr][iTs]=res[0];
+            mse[iTr][iTs]=res[1];
+            scc[iTr][iTs]=res[2];
+            //
         }
     }
+    // SALVO 
+    matvar_t *workspace[3]; 
+    size_t dims_1c[2]; 
+    dims_1c[0]=trsz; dims_1c[1]=tssz; 
+    workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,acc,0);
+    workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,mse,0);
+    workspace[2] = Mat_VarCreate("scc",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,scc,0);
+    //string prova="puppa.mat"; 
+    mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile.c_str(),NULL,MAT_FT_DEFAULT);	
+    for (int iWS=0; iWS<3; ++iWS)
+        Mat_VarWrite(Out_MATFILE, workspace[iWS], MAT_COMPRESSION_NONE);
+    //
+    delete [] act_label; 
+    Mat_Close(Out_MATFILE);
+
     return; 
 }	
 
