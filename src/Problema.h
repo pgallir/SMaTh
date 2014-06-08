@@ -38,8 +38,6 @@ public:
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;   
     ~Problema(); 
     void PrintVar(); 
-protected: 
-    void SalvoRisultatiSuMatfile();    // qui salvo i risultati come si aspetta chi legge i .mat
 }; 
 
 

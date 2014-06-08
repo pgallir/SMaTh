@@ -72,6 +72,12 @@ void SVModel::updateParam(struct svm_parameter *param_){
             param.weight[i] = param_->weight[i]; 
         }
     }
+
+    //debug
+    if (0){
+        cout << "param.svm_type " <<  param.svm_type << endl; 
+        cout << "param.kernel_type " <<  param.kernel_type<< endl; 
+    }
 }
 
 void SVModel::initStrutturaDati(int LabelTrSelSize,int *label_training_selection,  // info sul Training Set
@@ -355,24 +361,17 @@ void Job::predictTestSet(int labelIdx){
 
 void Job::predictValidationSet(double *ValidTrend,int labelIdx){
     if (assegnato_svm){
-        cout << endl << "validation" << endl; 
+        if (Print)
+            cout << endl << "validation" << endl; 
         svm_.predict(TRENDs,                                           // contenitore per i risultati
                      Print,                                            // stampo a video le performances
                      ds.LabelValSelSize,ds.label_valid_selection,      // info sul Test Set 
                      FeatSelSize,feature_sel,                          // info sulle feature da usare 
                      labelIdx,                                         // info sulla label da usare
                      features,FeatSize,labels,LabelSize);              // info su tutto il dataset
-
-        // Mat_VarPrint(RES[1],1); 
         double *res = (double *)((matvar_t *)TRENDs[2])->data; 
-        cout << endl; 
         for (int i=0; i<ds.LabelValSelSize; ++i)
-        {    
             ValidTrend[i]=res[i]; 
-//            cout << " " << res[i]; 
-        }
-//        exit(10);
-
     }else{
         fprintf(stderr,"Non ho addestrato un modello svm\n");
         exit(1);       
@@ -383,7 +382,8 @@ void Job::predictValidationSet(double *ValidTrend,int labelIdx){
 
 
 void Job::run(){
-    cout << endl << "------ new run ------ iRip==" << iRip << endl << endl;  
+    if (Print)
+        cout << endl << "------ new run ------ iRip==" << iRip << endl << endl;  
     //
     int iTr=0,iTs=0,iVar,iV,iFRip, 
         i,ii,
@@ -400,7 +400,8 @@ void Job::run(){
         varnameC = Mat_VarGetCell(VARIABLEs,iV);    // recupero il nome di questa variabile
         VARNAME=(const char*)varnameC->data;        
         // segnalo dove sono a video
-        cout << endl << "------ iV=" << VARNAME << endl << endl;  
+        if (Print)
+            cout << endl << "------ iV=" << VARNAME << endl << endl;  
         // 
         resFile_+=VARNAME; resFile_+="-";           // riporto quale variabile sto esaminando nel filename
         resFile_+="nF_"; resFile_+=to_string(FeatSelSize); resFile_+="-"; // e quante features
@@ -423,7 +424,8 @@ void Job::run(){
         for (iTr=0; iTr<trsz; ++iTr){
             ds.assegnoTrainingSet(iTr);  
             for (iFRip=0; iFRip<FRip; ++iFRip){
-                cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
+                if (Print)
+                    cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
                 UpdateFeatureSelection(); // cambio, se devo, la selezione delle features
                 for (i=0; i<FeatSelSize; ++i) // recupero gli indici delle feature che ho usato
                     featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio

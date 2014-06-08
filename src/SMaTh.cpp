@@ -17,7 +17,7 @@ int main(int argc, char** argv)
            
     int DimFeatures=-1, RipFeatures=-1, Label=-1;  
     struct svm_parameter param_;
-    bool Print; 
+    bool Print=false; // default 
     FunUtili::parseArguments(argc,argv,&file,&DimFeatures, &RipFeatures, &Label, &Print, &param_);     
 
     // inizializzo il problema

@@ -49,12 +49,6 @@ void Problema::PrintVar(){
     return; 
 }
 
-void Problema::SalvoRisultatiSuMatfile(){
-    cout<<"non esiste questo metodo";     
-    return;  
-}
-
-
 
 //////////////////// DATI SIMULAZIONE ////////////////////////
 

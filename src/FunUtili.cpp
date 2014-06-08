@@ -57,7 +57,6 @@ void FunUtili::exit_with_help(){
     "-h shrinking : whether to use the shrinking heuristics, 0 or 1 (default 1)\n"
 	"-b probability_estimates : whether to train a SVC or SVR model for probability estimates, 0 or 1 (default 0)\n"
     "-wi weight : set the parameter C of class i to weight*C, for C-SVC (default 1)\n"
-    "-q : quiet mode (no outputs)\n\n"
     "\E[1m"
     "3) advanced options\n\n"
     "\E[0m"
@@ -66,15 +65,10 @@ void FunUtili::exit_with_help(){
     "              ex: '--#features 5:10' will select 10 times 5 features and simulate the problem defined in the matfile\n"
     "--label[i] : if you don't want to run the simulations across all variables, you can here set what label should be used\n"
     "             ex: '--label[i] 2' will select the 3rd column of OUT (see 1) matfile)\n"
-    "--perc_sig : perc_sig==0 means that the signal folds are measured in steps\n" 
-    "             perc_sig==1 means that are measured in percentage of the whole recorded signal\n"
-    "             it cannot assume different values from {0,1}\n"
-    "             ex: '--perc_sig 1' will use T{r,s}Sz values as percentage of idxCV\n"
+    "--print    : if followed by number greater than 0 it prints the status of the simulation on the screen (makes sense if not multithreding)\n"
     "\n");
     exit(1);
 }
-
-
 
 void FunUtili::parseArguments(int argc, char **argv, 
                               string *filename, int *DimFeatures, int *RipFeatures, int *Label,bool *Print,
@@ -111,6 +105,16 @@ void FunUtili::parseArguments(int argc, char **argv,
                     exit(2);
                 }
                 *Label = (int)atoi(argv[i+1]);
+            }else if(string(argv[i]) == "--print"){
+                if (i+1>=argc || argv[i+1][0] == '-'){
+                    fprintf(stderr,"You forgot to set value @ %s\n",argv[i]); 
+                    exit(2);
+                }
+                int print = (int)atoi(argv[i+1]);
+                if (print>0)
+                    *Print=true; 
+                else
+                    *Print=false;
             }else{
                 fprintf(stderr,"%s is not correct. Use --help for further infos\n",argv[i]);
                 exit(1);
@@ -133,12 +137,12 @@ void FunUtili::parseArguments(int argc, char **argv,
     param->probability=-1;
     param->nr_weight=-1;
     param->weight_label=NULL;
-    param->weight=NULL; 
-    *Print=true; 
+    param->weight=NULL;
     // parse options
-    for(int i=1;i<argc;i++){
-        if(argv[i][0] != '-') break;
-        switch(argv[i-1][1])
+    for(int ii=1;ii<argc;ii++){
+        int i=ii+1; 
+        if(argv[ii][0] == '-') 
+        switch(argv[ii][1])
         {
             case 's':
                 param->svm_type = atoi(argv[i]);
@@ -175,10 +179,6 @@ void FunUtili::parseArguments(int argc, char **argv,
                 break;
             case 'b':
                 param->probability = atoi(argv[i]);
-                break;
-            case 'q':
-                *Print = false;
-                i--;
                 break;
             case 'w':
                 ++param->nr_weight;
