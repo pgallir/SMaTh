@@ -32,7 +32,7 @@ class Job{
 public: 
     DatiSimulazione ds; 
     SVModel svm_; 
-    matvar_t **RES,*VARIABLEs; 
+    matvar_t **RES,**TRENDs,*VARIABLEs; 
     Job(int iRip_,Problema *pr_,
         int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,
         bool Print_, struct svm_parameter param_); 
@@ -42,7 +42,7 @@ public:
     void UpdateFeatureSelection();
     void TrainingFromAssignedProblem(int labelIdx); 
     void predictTestSet(int labelIdx);
-    void predictValidationSet(double ***ValidTrend,int iTr_); 
+    void predictValidationSet(double ValidTrend[],int labelIdx); 
 private:     
     string nome,qualeLabel,resFile; 
     struct svm_parameter *param;

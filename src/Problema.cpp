@@ -21,10 +21,12 @@ Problema::Problema(string f_pr){
     RIPD=*ripd; 
     TrSzD=TrSz->dims[1];
     TsSzD=TsSz->dims[1]; 
+/*
     ValidationDimension=0; 
     const matvar_t **CellVS = (const matvar_t**) idxVS->data;
     for (int i=0; i<(int)idxVS->dims[1]; ++i)
         ValidationDimension+=(int) CellVS[i]->dims[1];        
+*/
     // 
     if (0) // stampo a video per debug una matrice MxN
         Mat_VarPrint((matvar_t*) Features,1); 
@@ -108,15 +110,16 @@ void DatiSimulazione::assegnoProblema(Problema *pr_){
 void DatiSimulazione::assegnoValidationSet(){
     // assegno il validation_set   
     if (ValidationSet_assegnato==false){ 
-        int i,j,k,VS_Cell_Dim=idxVS->dims[1],VSDim=0; 
+        LabelValSelSize=0;
+        int i,j,k,VS_Cell_Dim=idxVS->dims[1]; 
         for (i=0; i<VS_Cell_Dim; ++i){
-            VSDim += CellVS[i]->dims[1];        
+            LabelValSelSize += CellVS[i]->dims[1];        
         }
-        label_valid_selection = new int [VSDim]; 
+        label_valid_selection = new int [LabelValSelSize]; 
         k=0;  
         for (i=0; i<VS_Cell_Dim; ++i){
             double *cell = (double*)CellVS[i]->data;
-            for (j=0; j<(int)CellCV[i]->dims[1]; ++j)
+            for (j=0; j<(int)CellVS[i]->dims[1]; ++j)
                 label_valid_selection[k++] = (int)cell[j];
         }      
         ValidationSet_assegnato=true; 

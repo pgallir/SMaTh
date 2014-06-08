@@ -34,7 +34,7 @@ class Problema{
 public: 
     string nome; 
     Problema(string f_pr); 
-    int RIPD=0,TrSzD=0,TsSzD=0,ValidationDimension=0; 
+    int RIPD=0,TrSzD=0,TsSzD=0; 
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;   
     ~Problema(); 
     void PrintVar(); 
@@ -46,7 +46,8 @@ protected:
 class DatiSimulazione{
 public:
     Problema *pr=NULL; 
-    int LabelTrSelSize=0,LabelTsSelSize=0,iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
+    int iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
+        LabelTrSelSize=0,LabelTsSelSize=0,LabelValSelSize=0,
         *label_training_selection=NULL,*label_test_selection=NULL,*label_valid_selection=NULL, 
         *block_selection=NULL;
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;

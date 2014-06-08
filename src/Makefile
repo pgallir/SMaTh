@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -std=c++0x -Wall -Wl,--copy-dt-needed-entries #-g -v -Q -da
+CFLAGS = -std=c++0x -Wall -Wl,--copy-dt-needed-entries -g -v -Q -da
 LIB = -lmatio -lz  -lboost_thread -lm 
 all: clean SMaTh 
     # SvmMatio.o SMaTh
