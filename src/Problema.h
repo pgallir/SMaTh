@@ -47,21 +47,23 @@ class DatiSimulazione{
 public:
     Problema *pr=NULL; 
     int LabelTrSelSize=0,LabelTsSelSize=0,iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
-        *label_training_selection=NULL,*label_test_selection=NULL, *block_selection=NULL,
-        *TestPotentialSelection=NULL; 
+        *label_training_selection=NULL,*label_test_selection=NULL,*label_valid_selection=NULL, 
+        *block_selection=NULL;
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;
     DatiSimulazione(); 
     ~DatiSimulazione(); 
     void assegnoTrainingSet(int iTr_);
     void assegnoTestSet(int iTs_);
+    void assegnoValidationSet();
     void assegnoProblema(Problema *pr_); 
 private:
     int TOT_STEPS=0; 
     double *trS_, *tsS_; 
     const matvar_t **CellCV, **CellVS; 
-    bool problema_assegnato=false; 
-    bool TrainingSet_assegnato=false;  
-    bool TestSet_assegnato=false; 
+    bool problema_assegnato=false, 
+         TrainingSet_assegnato=false,  
+         TestSet_assegnato=false, 
+         ValidationSet_assegnato=false;
 }; 
 
 

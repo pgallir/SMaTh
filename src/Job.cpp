@@ -283,7 +283,7 @@ void Job::UpdateDatiSimulazione(){
     LabelSize=ds.Labels->dims; 
     features=(double*)ds.Features->data; 
     labels=(double*)ds.Labels->data;
-    VARIABLEs=(matvar_t*)ds.VARIABLEs;  
+    VARIABLEs=(matvar_t*)ds.VARIABLEs; 
     //
     assegnatiDatiTraining=true; 
     assegnatiDatiTest=true; 
@@ -365,13 +365,13 @@ void Job::run(){
     cout << endl << "------ new run ------ iRip==" << iRip << endl << endl;  
     //
     int iTr=0,iTs=0,iVar,iV,iFRip, 
+        i,ii,
         trsz=ds.pr->TrSzD, tssz=ds.pr->TsSzD, valdim=ds.pr->ValidationDimension; 
     double acc[trsz][tssz][FRip], mse[trsz][tssz][FRip], scc[trsz][tssz][FRip],
            featNum[FeatSelSize][FRip],
-           *res,*pLabels,*act_label; 
-    act_label = new double [valdim]; 
-    matvar_t *varnameC; 
-    
+           *res,trends[valdim][trsz][FRip],actualLabel[valdim]; 
+    matvar_t *varnameC;
+    //
     for (iVar=0; iVar<LabelSelSize; ++iVar){ 
         iV=LabelSelIdx[iVar]; // questa e` la variabile che vogliamo decodificare
         // -------------- cambio il nome del file in modo da coincidere con la variabile --------------------------------------
@@ -390,13 +390,22 @@ void Job::run(){
                        resFile_.end());                              
         // --------------------------------------------------------------------------------------------------------------------
         cout << endl << "------ iV=" << VARNAME << endl << endl;  
-        //
+        // recupero l'andamento della label sul validation set
+        for (ii=0; ii<valdim; ++ii){
+            i=ds.label_valid_selection[ii]; 
+            actualLabel[ii]=labels[LabelSize[0]*iV+i]; // prendo l'i-esimo indice del del validation set della variabile iV
+                                                       // LabelSize[0] e` il numero totale delle istanze
+            // XXX funzionera`? 
+        }
+        // 
         for (iTr=0; iTr<trsz; ++iTr){
             ds.assegnoTrainingSet(iTr);  
             for (iFRip=0; iFRip<FRip; ++iFRip){
                 cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
                 UpdateFeatureSelection(); // cambio, se devo, la selezione delle features
-                assegnato_svm=false; // devo riaddestrare per ogni Training Set o per ogni sottocampionamento delle features  
+                for (i=0; i<FeatSelSize; ++i) // recupero gli indici delle feature che ho usato
+                    featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio
+                                                                  // aggiungo 1.0 per come funziona l'indicizzazione su matlab
 // per debug
 if (0){
     cout << endl << "feat idx" << endl; 
@@ -404,8 +413,12 @@ if (0){
         cout << " " << feature_sel[i];
     cout << endl;    
 }
+                assegnato_svm=false; // devo riaddestrare per ogni Training Set o per ogni sottocampionamento delle features  
                 TrainingFromAssignedProblem(iV); // addestro con lo stesso Training Set ma (forse) diverse Features
                 //predictValidationSet(&ValidTrend,iTr); // Test sul Validation Set
+
+                // recupero i trends sul Validation Set
+                //
                 for (iTs=0; iTs<tssz; ++iTs){
                     ds.assegnoTestSet(iTs);
                     predictTestSet(iV); 
@@ -416,23 +429,18 @@ if (0){
                     scc[iTr][iTs][iFRip]=res[2];
                 }
             }
-            // recupero gli indici delle feature che ho usato
-            for (int i=0; i<FeatSelSize; ++i)
-                featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio
-                                                              // aggiungo 1.0 per come funziona l'indicizzazione su matlab
         }
-
         // -------------- salvo un file per ogni variabile | setto il workspace da salvare --------------------------------------
         int WsSize=4; 
         matvar_t *workspace[WsSize]; 
-        size_t dims_3[3], dims_2[2]; 
+        size_t dims_3[3], dims_2[2];
         dims_3[0]=trsz; dims_3[1]=tssz; dims_3[2]=FRip; 
-        dims_2[0]=FeatSelSize; dims_2[1]=FRip; 
+        dims_2[0]=FeatSelSize; dims_2[1]=FRip;
         workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,acc,0);
         workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,mse,0);
         workspace[2] = Mat_VarCreate("scc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,scc,0);
         workspace[3] = Mat_VarCreate("featIdx",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,featNum,0);
-        workspace[4] = Mat_VarCreate("actualLabel",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,act_label,0); 
+        //workspace[4] = Mat_VarCreate("trends",MAT_C_CELL,MAT_T_CELL,1,dims_1,trends,0); 
         // Apro scrivo e chiudo il matfile
         mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile_.c_str(),NULL,MAT_FT_DEFAULT);	
         for (int iWS=0; iWS<WsSize; ++iWS)
@@ -441,7 +449,6 @@ if (0){
         // ----------------------------------------------------------------------------------------------------------------------
     }
 
-    delete [] act_label; 
 
     return; 
 }	

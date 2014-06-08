@@ -22,8 +22,8 @@ Problema::Problema(string f_pr){
     TrSzD=TrSz->dims[1];
     TsSzD=TsSz->dims[1]; 
     ValidationDimension=0; 
-    const matvar_t **CellVS = (const matvar_t**) idxCV->data;
-    for (int i=0; i<(int)idxCV->dims[1]; ++i)
+    const matvar_t **CellVS = (const matvar_t**) idxVS->data;
+    for (int i=0; i<(int)idxVS->dims[1]; ++i)
         ValidationDimension+=(int) CellVS[i]->dims[1];        
     // 
     if (0) // stampo a video per debug una matrice MxN
@@ -60,6 +60,7 @@ DatiSimulazione::DatiSimulazione(){
     problema_assegnato=false; 
     TrainingSet_assegnato=false;  
     TestSet_assegnato=false;  
+    ValidationSet_assegnato=false; 
     LabelTrSelSize=0; 
     LabelTsSelSize=0; 
     NumTrBlockSel=0; 
@@ -75,6 +76,8 @@ DatiSimulazione::~DatiSimulazione(){
     }
     if (TestSet_assegnato==true)
         delete [] label_test_selection; 
+    if (ValidationSet_assegnato==true)
+        delete [] label_valid_selection;
 }
 
 void DatiSimulazione::assegnoProblema(Problema *pr_){
@@ -95,9 +98,35 @@ void DatiSimulazione::assegnoProblema(Problema *pr_){
     CellCV = (const matvar_t**) idxCV->data;
     CellVS = (const matvar_t**) idxVS->data;
     //
+    assegnoValidationSet(); // va chiamato una volta sola
+    //
     problema_assegnato=true; 
     return;     
 }
+
+
+void DatiSimulazione::assegnoValidationSet(){
+    // assegno il validation_set   
+    if (ValidationSet_assegnato==false){ 
+        int i,j,k,VS_Cell_Dim=idxVS->dims[1],VSDim=0; 
+        for (i=0; i<VS_Cell_Dim; ++i){
+            VSDim += CellVS[i]->dims[1];        
+        }
+        label_valid_selection = new int [VSDim]; 
+        k=0;  
+        for (i=0; i<VS_Cell_Dim; ++i){
+            double *cell = (double*)CellVS[i]->data;
+            for (j=0; j<(int)CellCV[i]->dims[1]; ++j)
+                label_valid_selection[k++] = (int)cell[j];
+        }      
+        ValidationSet_assegnato=true; 
+    }else{
+        fprintf(stderr," Problema non assegnato \n");
+        exit(1);
+    }
+    return ; 
+}
+
 
 void DatiSimulazione::assegnoTrainingSet(int iTr_){
     // cancello la memoria se sto riassegnando il TrainingSet
