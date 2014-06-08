@@ -221,12 +221,16 @@ void SVModel::predict(matvar_t **RES,                                           
 
 //////////////////// JOB ////////////////////////
 
-Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_){
+Job::Job(){
     assegnato_svm=false;
     assegnatiDatiTraining=false; 
-    assegnatiDatiTest=false;    
-    Print=Print_; 
+    assegnatiDatiTest=false;   
+    assegnatoProblema=false; 
+}
+
+void Job::load_and_run(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_){
     //
+    Print=Print_; 
     param=&param_; 
     svm_.updateParam(param); // aggiorno i parametri della svm 
     iRip=iRip_;
@@ -266,14 +270,19 @@ Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelId
     //
     RES = new matvar_t* [3];
     TRENDs = new matvar_t* [3];
+    //
+    assegnatoProblema=true; 
+    run(); 
 }
 
 
 Job::~Job(){
-    delete [] RES;     
-    delete [] TRENDs;     
-    delete [] feature_sel; 
-    delete [] LabelSelIdx; 
+    if (assegnatoProblema==true){
+        delete [] RES;     
+        delete [] TRENDs;     
+        delete [] feature_sel; 
+        delete [] LabelSelIdx; 
+    }
 }
 
 
@@ -386,11 +395,12 @@ void Job::run(){
     //
     for (iVar=0; iVar<LabelSelSize; ++iVar){ 
         iV=LabelSelIdx[iVar]; // questa e` la variabile che vogliamo decodificare
-        cout << endl << "------ iV=" << VARNAME << endl << endl;  
         // -------------- cambio il nome del file in modo da coincidere con la variabile --------------------------------------
         string resFile_=resFile,VARNAME;            // cosi` lo scope e` locale in questo ciclo
         varnameC = Mat_VarGetCell(VARIABLEs,iV);    // recupero il nome di questa variabile
         VARNAME=(const char*)varnameC->data;        
+        // segnalo dove sono a video
+        cout << endl << "------ iV=" << VARNAME << endl << endl;  
         // 
         resFile_+=VARNAME; resFile_+="-";           // riporto quale variabile sto esaminando nel filename
         resFile_+="nF_"; resFile_+=to_string(FeatSelSize); resFile_+="-"; // e quante features

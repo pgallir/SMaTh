@@ -1,10 +1,19 @@
 #include "Job.h" 
+#include <boost/thread.hpp>   
+#include <boost/thread/mutex.hpp> 
+#include <boost/threadpool.hpp>
+
+using namespace boost::threadpool;
 
 int main(int argc, char** argv) 
 {	
+    // threadpool 
+    pool tp(8); 
+
     // recupero alcuni parametri dall'esterno
     //string file="../data/BipRW_r327_110704_var10_Best.mat"; 
-    string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2.mat"; 
+    //string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2.mat"; 
+    string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2_MODIFICATO.mat"; 
            
     int DimFeatures=-1, RipFeatures=-1, Label=-1;  
     struct svm_parameter param_;
@@ -28,11 +37,12 @@ int main(int argc, char** argv)
          << "TsSz " << tssz << endl; 
 
     // lavoro
+    Job j[rip];
     for (iRip=0; iRip<rip; ++iRip){
-        Job j(iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_); 
-//        Job j(iRip,pr_,argc,argv); 
-        j.run(); 
+        //j[iRip].load_and_run(iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_); 
+        tp.schedule(boost::bind(&Job::load_and_run,j[iRip],iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_));  // multithr
     }
+    tp.wait(); 
 
     svm_destroy_param(&param_);
     return 0; 

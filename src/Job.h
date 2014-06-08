@@ -33,10 +33,12 @@ public:
     DatiSimulazione ds; 
     SVModel svm_; 
     matvar_t **RES,**TRENDs,*VARIABLEs; 
-    Job(int iRip_,Problema *pr_,
-        int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,
-        bool Print_, struct svm_parameter param_); 
+    Job(); 
+/*(int iRip_,Problema *pr_,
+int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,
+bool Print_, struct svm_parameter param_); */
     ~Job(); 
+    void load_and_run(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_); 
     void run(); 
     void UpdateDatiSimulazione();  
     void UpdateFeatureSelection();
@@ -46,7 +48,8 @@ public:
 private:     
     string nome,qualeLabel,resFile; 
     struct svm_parameter *param;
-    bool assegnato_svm=false,
+    bool assegnatoProblema=false,
+         assegnato_svm=false,
          assegnatiDatiTraining=false, 
          assegnatiDatiTest=false,
          Print=false,

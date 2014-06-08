@@ -4,7 +4,7 @@
 #include "FunUtili.h" 
 
 
-// debug da fare quando assegno il problema!
+// XXX debug da fare quando assegno il problema!
 /*
   int label_num, label_instance, feature_number, testing_instance_number; 
   feature_number = (int)(prhs[1]->dims[1]);
