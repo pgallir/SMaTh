@@ -344,7 +344,7 @@ void Job::predictTestSet(int labelIdx){
 }
 
 
-void Job::predictValidationSet(double ValidTrend[],int labelIdx){
+void Job::predictValidationSet(double *ValidTrend,int labelIdx){
     if (assegnato_svm){
         cout << endl << "validation" << endl; 
         svm_.predict(TRENDs,                                           // contenitore per i risultati
@@ -386,6 +386,7 @@ void Job::run(){
     //
     for (iVar=0; iVar<LabelSelSize; ++iVar){ 
         iV=LabelSelIdx[iVar]; // questa e` la variabile che vogliamo decodificare
+        cout << endl << "------ iV=" << VARNAME << endl << endl;  
         // -------------- cambio il nome del file in modo da coincidere con la variabile --------------------------------------
         string resFile_=resFile,VARNAME;            // cosi` lo scope e` locale in questo ciclo
         varnameC = Mat_VarGetCell(VARIABLEs,iV);    // recupero il nome di questa variabile
@@ -393,7 +394,6 @@ void Job::run(){
         // 
         resFile_+=VARNAME; resFile_+="-";           // riporto quale variabile sto esaminando nel filename
         resFile_+="nF_"; resFile_+=to_string(FeatSelSize); resFile_+="-"; // e quante features
-        resFile_+="FRip_"; resFile_+=to_string(FRip); resFile_+="-"; // e quante volte le ho ricampionate 
         resFile_+="res.mat";    // aggiungo l'estensione 
         // elimino gli spazi
         resFile_.erase(remove_if(resFile_.begin(), 
@@ -401,17 +401,15 @@ void Job::run(){
                                  [](char x){return isspace(x);}),
                        resFile_.end());                              
         // --------------------------------------------------------------------------------------------------------------------
-        cout << endl << "------ iV=" << VARNAME << endl << endl;  
-        // recupero l'andamento della label sul validation set
+        //
+        // ----------------------------  recupero l'andamento della label sul validation set ----------------------------------
         for (ii=0; ii<valdim; ++ii){
             i=ds.label_valid_selection[ii];
-            actualLabel[ii]=labels[i]; 
-            /* questo andrebbe bene, ma non qui 
             actualLabel[ii]=labels[LabelSize[0]*iV+i]; // prendo l'i-esimo indice del del validation set della variabile iV
                                                        // LabelSize[0] e` il numero totale delle istanze
-            */
         }
-        // 
+        // ---------------------------------------------------------------------------------------------------------------------  
+        //
         for (iTr=0; iTr<trsz; ++iTr){
             ds.assegnoTrainingSet(iTr);  
             for (iFRip=0; iFRip<FRip; ++iFRip){
@@ -431,9 +429,10 @@ if (0){
                 TrainingFromAssignedProblem(iV); // addestro con lo stesso Training Set ma (forse) diverse Features
                 predictValidationSet(ValidTrend,iV); // Test sul Validation Set
 
-                // recupero i trends sul Validation Set
+                // ------------------------------- recupero i trends sul Validation Set -----------------------------------------
                 for (ii=0; ii<valdim; ++ii)
                     trends[ii][iTr][iFRip]=ValidTrend[ii]; 
+                // --------------------------------------------------------------------------------------------------------------
                 //
                 for (iTs=0; iTs<tssz; ++iTs){
                     ds.assegnoTestSet(iTs);
@@ -447,19 +446,27 @@ if (0){
             }
         }
         // -------------- salvo un file per ogni variabile | setto il workspace da salvare --------------------------------------
-        int WsSize=6; 
+        int WsSize=11; 
         matvar_t *workspace[WsSize]; 
-        size_t dims_3[3], dims_2[2];
+        size_t dims_3[3], dims_2[2], dims_1[1]; 
         dims_3[0]=trsz; dims_3[1]=tssz; dims_3[2]=FRip; 
         dims_2[0]=FeatSelSize; dims_2[1]=FRip;
+        dims_1[0]=1;
         workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,acc,0);
         workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,mse,0);
         workspace[2] = Mat_VarCreate("scc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,scc,0);
         workspace[3] = Mat_VarCreate("featIdx",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,featNum,0);
-        dims_2[0]=valdim; dims_2[1]=1;
+        dims_2[1]=valdim; dims_2[0]=1;
         workspace[4] = Mat_VarCreate("actualLabel",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,actualLabel,0);
-        dims_3[0]=valdim; dims_3[1]=trsz; dims_3[2]=FRip; 
+        dims_3[2]=valdim; dims_3[1]=trsz; dims_3[0]=FRip; 
         workspace[5] = Mat_VarCreate("trends",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,trends,0);
+        double FRip_ws[1], trsz_ws[1], tssz_ws[1], FeatSelSize_ws[1], validSz_ws[1]; 
+        FRip_ws[0]=FRip; trsz_ws[0]=trsz; tssz_ws[0]=tssz; FeatSelSize_ws[0]=FeatSelSize; validSz_ws[0]=valdim; 
+        workspace[6] = Mat_VarCreate("FeatSelectionRip",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,FRip_ws,0);
+        workspace[7] = Mat_VarCreate("NumFeatures",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,FeatSelSize_ws,0);
+        workspace[8] = Mat_VarCreate("TrSz",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,trsz_ws,0);
+        workspace[9] = Mat_VarCreate("TsSz",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,tssz_ws,0);
+        workspace[10] = Mat_VarCreate("ValidationSetSize",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,validSz_ws,0);
         // Apro scrivo e chiudo il matfile
         mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile_.c_str(),NULL,MAT_FT_DEFAULT);	
         for (int iWS=0; iWS<WsSize; ++iWS)
@@ -467,7 +474,6 @@ if (0){
         Mat_Close(Out_MATFILE);
         // ----------------------------------------------------------------------------------------------------------------------
     }
-
 
     return; 
 }	

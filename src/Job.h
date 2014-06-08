@@ -42,7 +42,7 @@ public:
     void UpdateFeatureSelection();
     void TrainingFromAssignedProblem(int labelIdx); 
     void predictTestSet(int labelIdx);
-    void predictValidationSet(double ValidTrend[],int labelIdx); 
+    void predictValidationSet(double *ValidTrend,int labelIdx); 
 private:     
     string nome,qualeLabel,resFile; 
     struct svm_parameter *param;
