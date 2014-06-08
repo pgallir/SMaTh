@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>   
+#include <algorithm>
 
 using namespace std; 
 

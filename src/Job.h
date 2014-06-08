@@ -32,26 +32,29 @@ class Job{
 public: 
     DatiSimulazione ds; 
     SVModel svm_; 
-    matvar_t **RES; 
+    matvar_t **RES,*VARIABLEs; 
     Job(int iRip_,Problema *pr_,
         int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,
-        bool Print_, struct svm_parameter param_,
-        string resFile_); 
+        bool Print_, struct svm_parameter param_); 
     ~Job(); 
     void run(); 
     void UpdateDatiSimulazione();  
-    void TrainingFromAssignedProblem(); 
-    void predictTestSet();
+    void UpdateFeatureSelection();
+    void TrainingFromAssignedProblem(int labelIdx); 
+    void predictTestSet(int labelIdx);
     void predictValidationSet(double ***ValidTrend,int iTr_); 
 private:     
-    string nome="non assegnato",resFile; 
+    string nome,qualeLabel,resFile; 
     struct svm_parameter *param;
     bool assegnato_svm=false,
          assegnatiDatiTraining=false, 
          assegnatiDatiTest=false,
-         Print=false; 
-    int iRip,iFRip,
-        TsSize,FeatSelSize,TrSize, LabelSelIdx,
+         Print=false,
+         featRandomSelection=false; 
+    int iRip,FRip,
+        TsSize,TrSize,
+        TotFeatSize,FeatSelSize,
+        *LabelSelIdx,LabelSelSize,
         *label_training_selection,*label_test_selection,*feature_sel;
     size_t *FeatSize,*LabelSize; 
     double *features, 

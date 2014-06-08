@@ -25,6 +25,9 @@ Problema::Problema(string f_pr){
     const matvar_t **CellVS = (const matvar_t**) idxCV->data;
     for (int i=0; i<(int)idxCV->dims[1]; ++i)
         ValidationDimension+=(int) CellVS[i]->dims[1];        
+    // 
+    if (0) // stampo a video per debug una matrice MxN
+        Mat_VarPrint((matvar_t*) Features,1); 
 }
 
 Problema::~Problema(){ 

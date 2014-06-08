@@ -206,6 +206,35 @@ void FunUtili::predict_jr(matvar_t *plhs[],double *f,size_t *FeatSize,double *l,
                          bool print)                         
 {
     int idx,idx2,ii,jj,i,TotInstances=(int)FeatSize[0]; 
+
+
+// ROBA PER DEBUG, DA CANCELLARE POI
+// controllo la lettura dei dati
+// direi che va bene
+if (0){
+    cout << endl << "TestSet" << endl; 
+    for (int r=0; r<10; ++r){
+        cout << " " << testing_idx[r];
+    }
+    cout << endl << endl << "Label" << endl; 
+    for (int r=0; r<10; ++r){
+        int cc=LabelSelIdx,
+            rr=testing_idx[r]; 
+        cout << " " << l[TotInstances * cc + rr];
+    }
+    cout << endl << endl << "Feat" << endl; 
+    for (int r=0; r<10; ++r){
+        for (int c=0; c<feature_number; ++c){
+            int cc=feat_idx[c], 
+                rr=testing_idx[r]; 
+            cout << " " << f[TotInstances * cc + rr];
+        }
+        cout << endl; 
+    }
+    exit(1); 
+}
+//
+
     double *ptr_predict_label, *ptr_prob_estimates, *ptr_dec_values, ptr[3];
     struct svm_node *x;
 
@@ -261,8 +290,8 @@ void FunUtili::predict_jr(matvar_t *plhs[],double *f,size_t *FeatSize,double *l,
         for(jj=0;jj<feature_number;jj++){
             idx2=feat_idx[jj]; 
             // NB: assegno ad x i valori della feature corrispondente 
-            x[idx2].index = idx2+1;
-            x[idx2].value =  f[TotInstances * idx2 + idx]; 
+            x[jj].index = idx2+1;
+            x[jj].value =  f[TotInstances * idx2 + idx];  
         }
         x[feature_number].index = -1;
 

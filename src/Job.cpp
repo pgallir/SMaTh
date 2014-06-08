@@ -146,6 +146,36 @@ void SVModel::initStrutturaDati(int LabelTrSelSize,int *label_training_selection
 		x_space[j++].index = -1;
 	}
 
+
+// ROBA PER DEBUG 
+if (0){
+	for(ii = 0; ii < 10; ii++){
+        i=label_training_selection[ii]; 
+        cout << " " << labels[LabelSelIdx * TotIstanze + i]; 
+    }
+    cout << endl<< endl;
+
+	for(ii = 0; ii < 10; ii++){
+        i=label_training_selection[ii]; 
+        cout << " " << i; 
+    }
+    cout << endl<< endl;
+    for(ii = 0; ii < 10; ii++){
+        i=label_training_selection[ii]; 
+		for(kk = 0; kk < FeatSelSize /*sc*/; kk++){
+            k = feature_sel[kk]; 
+			if(param.kernel_type == PRECOMPUTED || samples[k * prob.l + i] != 0){
+				cout << " " << samples[k * TotIstanze + i]; 
+			}
+		}
+        cout << endl; 
+	}
+    // exit(1);
+}
+// FINE DI ROBA
+
+
+
 	if(param.gamma == 0 && max_index > 0)
 		param.gamma = 1.0/max_index;
 
@@ -191,58 +221,48 @@ void SVModel::predict(matvar_t **RES,                                           
 
 //////////////////// JOB ////////////////////////
 
-Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_, string resFile_){
+Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_){
     assegnato_svm=false;
     assegnatiDatiTraining=false; 
     assegnatiDatiTest=false;    
     Print=Print_; 
     //
     param=&param_; 
+    svm_.updateParam(param); // aggiorno i parametri della svm 
     iRip=iRip_;
-    iFRip=FeatSelRip_; 
-    LabelSelIdx=LabelSelIdx_; 
+    FRip=FeatSelRip_; 
     ds.assegnoProblema(pr_); 
     UpdateDatiSimulazione(); // una volta all'inizio e basta 
     // FeatSelSize
-    matvar_t *feat=(matvar_t*)ds.Features; 
-    FeatSelSize=feat->dims[1]; 
-    int *feature_sel_=new int [FeatSelSize];
-    for (int i=0; i<FeatSelSize; ++i)
-        feature_sel_[i]=i;    
-    if (FeatSelSize_==-1){
-        feature_sel=new int[FeatSelSize]; 
-        for (int i=0; i<FeatSelSize; ++i)
-            feature_sel[i]=feature_sel_[i];            // le seleziono tutte in ordine 
-    }else{
+    FeatSelSize=FeatSize[1]; 
+    TotFeatSize=FeatSelSize; 
+    featRandomSelection=false;
+    if (FeatSelSize_!=-1){
         FeatSelSize=FeatSelSize_; 
-        feature_sel=new int [FeatSelSize];
-        FunUtili::randperm(FeatSelSize_,feature_sel_); // mescolo  
-        for (int i=0; i<FeatSelSize; ++i)
-            feature_sel[i]=feature_sel_[i];            // seleziono un certo numero dal gruppo mescolato
+        featRandomSelection=true; 
     }
-    delete [] feature_sel_; 
+    feature_sel=new int [FeatSelSize];
+    UpdateFeatureSelection(); 
     // FeatSelRip
     if (FeatSelRip_==-1)
-        iFRip=1; 
+        FRip=1; 
     else
-        iFRip=FeatSelRip_; 
+        FRip=FeatSelRip_; 
     // LabelSelIdx
-    if (LabelSelIdx_==-1)
-        LabelSelIdx=0; // prima label di default    
-    else
-        LabelSelIdx=LabelSelIdx_; 
+    LabelSelSize=LabelSize[1];
+    if (LabelSelIdx_==-1){
+        LabelSelIdx=new int [LabelSelSize]; 
+        for (int i=0; i<LabelSelSize; ++i)
+            LabelSelIdx[i]=i; 
+    }else{
+        LabelSelSize=1; 
+        LabelSelIdx=new int [LabelSelSize]; 
+        LabelSelIdx[0]=LabelSelIdx_; 
+    }
     //
     nome=ds.pr->nome; 
-    nome.erase(nome.begin(),nome.begin()+8);
-    resFile="../data/res-iRip_";  resFile+=to_string(iRip); resFile+="-";  
-    /*
-           resFile+="-iVar_";    resFile+=to_string(LabelSelIdx);
-           resFile+="-nFeat_";   resFile+=to_string(FeatSelSize); 
-           resFile+="-ripFeat_"; resFile+=to_string(iFRip); 
-    */
-    resFile+=nome; 
-    if (resFile_!="puppa.mat")
-        resFile=resFile_; 
+    nome.erase(nome.find(".mat"));
+    resFile+=nome; resFile+="-iRip_";  resFile+=to_string(iRip); resFile+="-"; // base per il nome del file da salvare
     //
     RES = new matvar_t* [3];
 }
@@ -251,6 +271,7 @@ Job::Job(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelId
 Job::~Job(){
     delete [] RES;     
     delete [] feature_sel; 
+    delete [] LabelSelIdx; 
 }
 
 
@@ -262,6 +283,7 @@ void Job::UpdateDatiSimulazione(){
     LabelSize=ds.Labels->dims; 
     features=(double*)ds.Features->data; 
     labels=(double*)ds.Labels->data;
+    VARIABLEs=(matvar_t*)ds.VARIABLEs;  
     //
     assegnatiDatiTraining=true; 
     assegnatiDatiTest=true; 
@@ -269,19 +291,51 @@ void Job::UpdateDatiSimulazione(){
 }  
 
 
-void Job::TrainingFromAssignedProblem(){ 
+void Job::UpdateFeatureSelection(){
+    int i,*feature_sel_=new int [TotFeatSize];
+    if (featRandomSelection){
+        for (i=0; i<TotFeatSize; ++i)
+            feature_sel_[i]=i;    
+        FunUtili::randperm(TotFeatSize,feature_sel_); // mescolo  
+        for (i=0; i<FeatSelSize; ++i)
+            feature_sel[i]=feature_sel_[i]; 
+    }else{
+        for (int i=0; i<FeatSelSize; ++i)
+            feature_sel[i]=i;    
+    }
+    delete [] feature_sel_;    
+    return ;
+}
+
+
+void Job::TrainingFromAssignedProblem(int labelIdx){ 
     if (assegnatiDatiTraining){
-        // aggiorno i parametri della svm 
-        svm_.updateParam(param); 
         // leggo il problema per addestrare il modello svm 
         svm_.initStrutturaDati(ds.LabelTrSelSize,ds.label_training_selection,  // info sul Training Set
                                FeatSelSize,feature_sel,                        // info sulle feature da usare
-                               LabelSelIdx,                                    // info sulla label da usare
+                               labelIdx,                                       // info sulla label da usare
                                features,FeatSize,labels,LabelSize);            // info su tutto il dataset
         svm_.train();
         assegnato_svm=true; 
     }else{
         fprintf(stderr,"Non so quali dati usare per fare il Training del modello \n");
+        exit(1);       
+    }
+    return ; 
+}
+
+
+
+void Job::predictTestSet(int labelIdx){ 
+    if (assegnato_svm){
+        svm_.predict(RES,                                           // contenitore per i risultati
+                     Print,                                         // stampo a video le performances
+                     ds.LabelTsSelSize,ds.label_test_selection,     // info sul Test Set 
+                     FeatSelSize,feature_sel,                       // info sulle feature da usare 
+                     labelIdx,                                      // info sulla label da usare
+                     features,FeatSize,labels,LabelSize);           // info su tutto il dataset
+    }else{
+        fprintf(stderr,"Non ho addestrato un modello svm\n");
         exit(1);       
     }
     return ; 
@@ -306,61 +360,88 @@ void Job::predictValidationSet(double ***ValidTrend,int iTr_){
 }
 
 
-void Job::predictTestSet(){ 
-    if (assegnato_svm){
-        svm_.predict(RES,                                           // contenitore per i risultati
-                     Print,                                         // stampo a video le performances
-                     ds.LabelTsSelSize,ds.label_test_selection,     // info sul Test Set 
-                     FeatSelSize,feature_sel,                       // info sulle feature da usare 
-                     LabelSelIdx,                                   // info sulla label da usare
-                     features,FeatSize,labels,LabelSize);           // info su tutto il dataset
-    }else{
-        fprintf(stderr,"Non ho addestrato un modello svm\n");
-        exit(1);       
-    }
-    return ; 
-}
-
 
 void Job::run(){
-    cout << endl << "-- new run -- iRip==" << iRip << endl;  
+    cout << endl << "------ new run ------ iRip==" << iRip << endl << endl;  
     //
-    int iTr=0,iTs=0,i, 
+    int iTr=0,iTs=0,iVar,iV,iFRip, 
         trsz=ds.pr->TrSzD, tssz=ds.pr->TsSzD, valdim=ds.pr->ValidationDimension; 
-    double acc[trsz][tssz], mse[trsz][tssz], scc[trsz][tssz],
+    double acc[trsz][tssz][FRip], mse[trsz][tssz][FRip], scc[trsz][tssz][FRip],
+           featNum[FeatSelSize][FRip],
            *res,*pLabels,*act_label; 
-    act_label = new double [valdim];
-
-    for (iTr=0; iTr<trsz; ++iTr){
-        assegnato_svm=false; // devo addestrare per ogni Training Set un nuovo modello 
-        ds.assegnoTrainingSet(iTr);  
-        TrainingFromAssignedProblem(); // addestro
-        //predictValidationSet(&ValidTrend,iTr); // Test sul Validation Set
-        for (iTs=0; iTs<tssz; ++iTs){
-            ds.assegnoTestSet(iTs);
-            predictTestSet(); 
-            //
-            res = (double *)((matvar_t *)RES[1])->data; 
-            acc[iTr][iTs]=res[0];
-            mse[iTr][iTs]=res[1];
-            scc[iTr][iTs]=res[2];
-            //
+    act_label = new double [valdim]; 
+    matvar_t *varnameC; 
+    
+    for (iVar=0; iVar<LabelSelSize; ++iVar){ 
+        iV=LabelSelIdx[iVar]; // questa e` la variabile che vogliamo decodificare
+        // -------------- cambio il nome del file in modo da coincidere con la variabile --------------------------------------
+        string resFile_=resFile,VARNAME;            // cosi` lo scope e` locale in questo ciclo
+        varnameC = Mat_VarGetCell(VARIABLEs,iV);    // recupero il nome di questa variabile
+        VARNAME=(const char*)varnameC->data;        
+        // 
+        resFile_+=VARNAME; resFile_+="-";           // riporto quale variabile sto esaminando nel filename
+        resFile_+="nF_"; resFile_+=to_string(FeatSelSize); resFile_+="-"; // e quante features
+        resFile_+="FRip_"; resFile_+=to_string(FRip); resFile_+="-"; // e quante volte le ho ricampionate 
+        resFile_+="res.mat";    // aggiungo l'estensione 
+        // elimino gli spazi
+        resFile_.erase(remove_if(resFile_.begin(), 
+                                 resFile_.end(),
+                                 [](char x){return isspace(x);}),
+                       resFile_.end());                              
+        // --------------------------------------------------------------------------------------------------------------------
+        cout << endl << "------ iV=" << VARNAME << endl << endl;  
+        //
+        for (iTr=0; iTr<trsz; ++iTr){
+            ds.assegnoTrainingSet(iTr);  
+            for (iFRip=0; iFRip<FRip; ++iFRip){
+                cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
+                UpdateFeatureSelection(); // cambio, se devo, la selezione delle features
+                assegnato_svm=false; // devo riaddestrare per ogni Training Set o per ogni sottocampionamento delle features  
+// per debug
+if (0){
+    cout << endl << "feat idx" << endl; 
+    for (int i=0; i<FeatSelSize; ++i)
+        cout << " " << feature_sel[i];
+    cout << endl;    
+}
+                TrainingFromAssignedProblem(iV); // addestro con lo stesso Training Set ma (forse) diverse Features
+                //predictValidationSet(&ValidTrend,iTr); // Test sul Validation Set
+                for (iTs=0; iTs<tssz; ++iTs){
+                    ds.assegnoTestSet(iTs);
+                    predictTestSet(iV); 
+                    // recupero le performance del modello
+                    res = (double *)((matvar_t *)RES[1])->data; 
+                    acc[iTr][iTs][iFRip]=res[0];
+                    mse[iTr][iTs][iFRip]=res[1];
+                    scc[iTr][iTs][iFRip]=res[2];
+                }
+            }
+            // recupero gli indici delle feature che ho usato
+            for (int i=0; i<FeatSelSize; ++i)
+                featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio
+                                                              // aggiungo 1.0 per come funziona l'indicizzazione su matlab
         }
+
+        // -------------- salvo un file per ogni variabile | setto il workspace da salvare --------------------------------------
+        int WsSize=4; 
+        matvar_t *workspace[WsSize]; 
+        size_t dims_3[3], dims_2[2]; 
+        dims_3[0]=trsz; dims_3[1]=tssz; dims_3[2]=FRip; 
+        dims_2[0]=FeatSelSize; dims_2[1]=FRip; 
+        workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,acc,0);
+        workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,mse,0);
+        workspace[2] = Mat_VarCreate("scc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,scc,0);
+        workspace[3] = Mat_VarCreate("featIdx",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,featNum,0);
+        workspace[4] = Mat_VarCreate("actualLabel",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_2,act_label,0); 
+        // Apro scrivo e chiudo il matfile
+        mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile_.c_str(),NULL,MAT_FT_DEFAULT);	
+        for (int iWS=0; iWS<WsSize; ++iWS)
+            Mat_VarWrite(Out_MATFILE, workspace[iWS], MAT_COMPRESSION_NONE);
+        Mat_Close(Out_MATFILE);
+        // ----------------------------------------------------------------------------------------------------------------------
     }
-    // SALVO 
-    matvar_t *workspace[3]; 
-    size_t dims_1c[2]; 
-    dims_1c[0]=trsz; dims_1c[1]=tssz; 
-    workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,acc,0);
-    workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,mse,0);
-    workspace[2] = Mat_VarCreate("scc",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims_1c,scc,0);
-    //string prova="puppa.mat"; 
-    mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile.c_str(),NULL,MAT_FT_DEFAULT);	
-    for (int iWS=0; iWS<3; ++iWS)
-        Mat_VarWrite(Out_MATFILE, workspace[iWS], MAT_COMPRESSION_NONE);
-    //
+
     delete [] act_label; 
-    Mat_Close(Out_MATFILE);
 
     return; 
 }	
