@@ -510,9 +510,6 @@ if (0){
                help+="\tN=NumFeatures\n";
                help+="\tV=ValidationSetSize\n";
         dims_2[1]=help.size(); dims_2[0]=1;
-        char README[help.size()]; 
-        for (i=0; i<help.size(); ++i)
-            README[i]=help[i];  
         workspace[11] = Mat_VarCreate("README",MAT_C_CHAR,MAT_T_UINT8,2,dims_2,(char*)help.c_str(),0);
 
         // Apro scrivo e chiudo il matfile
