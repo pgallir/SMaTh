@@ -12,7 +12,7 @@
 using namespace std; 
 
 namespace FunUtili{
-    void randperm(int n,int perm[]);  // from groups.csail.mit.edu
+    void randperm(int n,int *perm);  
     void exit_with_help();
     //void parseArguments(int argc,char **argv,string *filename,int *DimFeatures,int *RipFeatures,int *Label,struct svm_parameter *param);
 /*    void parseArguments(int argc, char **argv, 

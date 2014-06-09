@@ -140,6 +140,8 @@ void DatiSimulazione::assegnoTrainingSet(int iTr_){
         NumTrBlockSel=(int) (trS_[iTr_]*TOT_STEPS/100);
         // permute randomly the training selection 
         block_selection = new int [idxCV->dims[1]]; 
+        for (i=0; i<(int)idxCV->dims[1]; i++)
+            block_selection[i]=i; 
         FunUtili::randperm((int) idxCV->dims[1],block_selection); 
         // get the memory dimension of the label I need to allocate
         for (ii=0; ii<TOT_STEPS; ii++){

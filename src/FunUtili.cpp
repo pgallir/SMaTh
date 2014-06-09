@@ -2,17 +2,21 @@
 
 //////////////////// FunUtili ////////////////////////
 
-void FunUtili::randperm(int n,int perm[]){  // from groups.csail.mit.edu
+void FunUtili::randperm(int n,int *perm){  
+    // NB: meglio se n e` la dimensione di perm. 
+    //     ma funziona anche se e` un intero piu` piccolo
     srand(time(NULL)); // cambio seme
     int i, j, t;
+    vector <int> p; 
     for(i=0; i<n; i++)
-        perm[i] = i;
-    for(i=0; i<n; i++){
-        j = rand()%(n-i)+i;
-        t = perm[j];
-        perm[j] = perm[i];
-        perm[i] = t;
-    }  
+        p.push_back(perm[i]);
+    i=0; 
+    while (p.size()!=0){
+        j=(rand()%(int)(p.size())); // output = min + (rand() % (int)(max - min + 1))
+        t=p[j];              
+        perm[i++]=t;           
+        p.erase(p.begin()+j); 
+    }
     return ;
 }
 

@@ -311,11 +311,8 @@ void Job::UpdateDatiSimulazione(){
 void Job::UpdateFeatureSelection(){
     int i,*feature_sel_=new int [TotFeatSize];
     if (featRandomSelection){
-/*
-    // lo fa gia` randperm
         for (i=0; i<TotFeatSize; ++i)
             feature_sel_[i]=i;    
-*/
         FunUtili::randperm(TotFeatSize,feature_sel_); // mescolo  
         for (i=0; i<FeatSelSize; ++i)
             feature_sel[i]=feature_sel_[i]; 
@@ -428,12 +425,14 @@ void Job::run(){
             ds.assegnoTrainingSet(iTr);  
             for (iFRip=0; iFRip<FRip; ++iFRip){
                 if (Print)
-                    cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
+                    cout << endl << "------ iTr%=" << (double)iTr/trsz     
+                         << endl << "------ iFRip%=" << (double)iFRip/FRip 
+                         << endl << endl;  
                 UpdateFeatureSelection(); // cambio, se devo, la selezione delle features
         //
         // -----------------------------------------  recupero gli indici delle features ---------------------------------------
                 for (i=0; i<FeatSelSize; ++i) // recupero gli indici delle feature che ho usato
-                    featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio
+                    featNum[i][iFRip]=(double)(feature_sel[i]+1); // per metterla nel ws di matio
                                                                   // aggiungo 1.0 per come funziona l'indicizzazione su matlab
         // ---------------------------------------------------------------------------------------------------------------------  
         //
@@ -465,11 +464,11 @@ if (0){
             }
         }
         // -------------- salvo un file per ogni variabile | setto il workspace da salvare --------------------------------------
-        int WsSize=11; 
+        int WsSize=12; 
         matvar_t *workspace[WsSize]; 
         size_t dims_3[3], dims_2[2], dims_1[1]; 
-        dims_3[0]=trsz; dims_3[1]=tssz; dims_3[2]=FRip; 
-        dims_2[0]=FeatSelSize; dims_2[1]=FRip;
+        dims_3[2]=trsz; dims_3[1]=tssz; dims_3[0]=FRip; 
+        dims_2[1]=FeatSelSize; dims_2[0]=FRip;
         dims_1[0]=1;
         workspace[0] = Mat_VarCreate("acc",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,acc,0);
         workspace[1] = Mat_VarCreate("mse",MAT_C_DOUBLE,MAT_T_DOUBLE,3,dims_3,mse,0);
@@ -486,6 +485,36 @@ if (0){
         workspace[8] = Mat_VarCreate("TrSz",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,trsz_ws,0);
         workspace[9] = Mat_VarCreate("TsSz",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,tssz_ws,0);
         workspace[10] = Mat_VarCreate("ValidationSetSize",MAT_C_DOUBLE,MAT_T_DOUBLE,1,dims_1,validSz_ws,0);
+        string help ="CONTENUTO DEL MATFILE:\n";
+               help+="{acc,mse,scc}\n";
+               help+="\tdimensione RxTsxTr\n";
+               help+="\t(accuratezza,mean squared error ed r2\n\toutput di libsvm)\n";
+ 
+               help+="featIdx\n";
+               help+="\tdimensione RxN\n";
+               help+="\t(indice delle features usate per addestrare\n\t il modello ad ogni ricampionamento)\n";
+              
+
+               help+="actualLabel\n";
+               help+="\tdimensione 1xV\n";
+               help+="\t(valore della label corrispondente al validation set\n\tNB: salvo un file diverso per ogni label)\n";
+
+               help+="trends\n";
+               help+="\tdimensione RxTrxV\n";
+               help+="\t(predizione della label, ne ho una diverso per ogni modello\n\tNB: ho un modello diverso per ogni\n\t +ricampionamento delle features\n\t +ricampionamento del training set)\n";
+
+               help+="***LEGENDA***\n";
+               help+="\tR=FeatSelectionRip\n";
+               help+="\tTs=TsSz\n";
+               help+="\tTr=TrSz\n";
+               help+="\tN=NumFeatures\n";
+               help+="\tV=ValidationSetSize\n";
+        dims_2[1]=help.size(); dims_2[0]=1;
+        char README[help.size()]; 
+        for (i=0; i<help.size(); ++i)
+            README[i]=help[i];  
+        workspace[11] = Mat_VarCreate("README",MAT_C_CHAR,MAT_T_UINT8,2,dims_2,(char*)help.c_str(),0);
+
         // Apro scrivo e chiudo il matfile
         mat_t *Out_MATFILE = Mat_CreateVer((const char*)resFile_.c_str(),NULL,MAT_FT_DEFAULT);	
         for (int iWS=0; iWS<WsSize; ++iWS)
