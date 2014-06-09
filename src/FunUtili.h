@@ -15,9 +15,13 @@ namespace FunUtili{
     void randperm(int n,int perm[]);  // from groups.csail.mit.edu
     void exit_with_help();
     //void parseArguments(int argc,char **argv,string *filename,int *DimFeatures,int *RipFeatures,int *Label,struct svm_parameter *param);
-    void parseArguments(int argc, char **argv, 
+/*    void parseArguments(int argc, char **argv, 
                         string *filename, int *DimFeatures, int *RipFeatures, int *Label,bool *Print,
-                        struct svm_parameter *param); 
+                        struct svm_parameter *param); */
+    void parseArguments(int argc, char **argv, 
+                        string *filename, int *DimFeatures, int *RipFeatures, int *Label,
+                        struct svm_parameter *param, 
+                        bool *Print, bool *MultiThreading);
     matvar_t* Mat_VarCreate_jr(const char *NomeVar, int raws, int cols); 
     void predict_jr(matvar_t *plhs[],double *f,size_t *FeatSize,double *l,size_t *LabelSize,      // contenitori {ingressi,uscite}
                     int *testing_idx,int testing_instance_number,                                  // pattern da predirre 

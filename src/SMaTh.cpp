@@ -12,13 +12,13 @@ int main(int argc, char** argv)
 
     // recupero alcuni parametri dall'esterno
     //string file="../data/BipRW_r327_110704_var10_Best.mat"; 
-    //string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2.mat"; 
-    string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2_MODIFICATO.mat"; 
+    string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2.mat"; 
+    //string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2_MODIFICATO.mat"; 
            
     int DimFeatures=-1, RipFeatures=-1, Label=-1;  
     struct svm_parameter param_;
-    bool Print=false; // default 
-    FunUtili::parseArguments(argc,argv,&file,&DimFeatures, &RipFeatures, &Label, &Print, &param_);     
+    bool Print=false,MultiThreading=false; // default 
+    FunUtili::parseArguments(argc,argv,&file,&DimFeatures, &RipFeatures, &Label, &param_, &Print, &MultiThreading);     
 
     // inizializzo il problema
     Problema pr(file), *pr_=&pr; 
@@ -34,15 +34,20 @@ int main(int argc, char** argv)
          << "Label " << Label << endl 
          << "Rip " << rip << endl 
          << "TrSz " << trsz << endl 
-         << "TsSz " << tssz << endl; 
+         << "TsSz " << tssz << endl
+         << "Print " << Print << endl
+         << "MultiThreading " << MultiThreading << endl; 
 
     // lavoro
     Job j[rip];
     for (iRip=0; iRip<rip; ++iRip){
-        //j[iRip].load_and_run(iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_); 
-        tp.schedule(boost::bind(&Job::load_and_run,j[iRip],iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_));  // multithr
+        if (MultiThreading==true)
+            tp.schedule(boost::bind(&Job::load_and_run,j[iRip],iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_));  // multithr
+        else
+            j[iRip].load_and_run(iRip,pr_,DimFeatures,RipFeatures,Label,Print,param_); 
     }
-    tp.wait(); 
+    if (MultiThreading==true)
+        tp.wait(); 
 
     svm_destroy_param(&param_);
     return 0; 

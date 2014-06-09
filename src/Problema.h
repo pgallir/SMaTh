@@ -34,7 +34,7 @@ class Problema{
 public: 
     string nome; 
     Problema(string f_pr); 
-    int RIPD=0,TrSzD=0,TsSzD=0; 
+    int RIPD,TrSzD,TsSzD; 
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;   
     ~Problema(); 
     void PrintVar(); 
@@ -43,11 +43,11 @@ public:
 
 class DatiSimulazione{
 public:
-    Problema *pr=NULL; 
-    int iTr=0,iTs=0,NumTrBlockSel=0,NumTrTsBlockSel=0,
-        LabelTrSelSize=0,LabelTsSelSize=0,LabelValSelSize=0,
-        *label_training_selection=NULL,*label_test_selection=NULL,*label_valid_selection=NULL, 
-        *block_selection=NULL;
+    Problema *pr; 
+    int iTr,iTs,NumTrBlockSel,NumTrTsBlockSel,
+        LabelTrSelSize,LabelTsSelSize,LabelValSelSize,
+        *label_training_selection,*label_test_selection,*label_valid_selection, 
+        *block_selection;
     const matvar_t *Features, *Labels, *VARIABLEs, *RIP, *idxCV, *idxVS, *TrSz, *TsSz;
     DatiSimulazione(); 
     ~DatiSimulazione(); 
@@ -56,13 +56,13 @@ public:
     void assegnoValidationSet();
     void assegnoProblema(Problema *pr_); 
 private:
-    int TOT_STEPS=0; 
+    int TOT_STEPS; 
     double *trS_, *tsS_; 
     const matvar_t **CellCV, **CellVS; 
-    bool problema_assegnato=false, 
-         TrainingSet_assegnato=false,  
-         TestSet_assegnato=false, 
-         ValidationSet_assegnato=false;
+    bool problema_assegnato, 
+         TrainingSet_assegnato,  
+         TestSet_assegnato, 
+         ValidationSet_assegnato;
 }; 
 
 

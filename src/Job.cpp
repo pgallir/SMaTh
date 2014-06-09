@@ -311,8 +311,11 @@ void Job::UpdateDatiSimulazione(){
 void Job::UpdateFeatureSelection(){
     int i,*feature_sel_=new int [TotFeatSize];
     if (featRandomSelection){
+/*
+    // lo fa gia` randperm
         for (i=0; i<TotFeatSize; ++i)
             feature_sel_[i]=i;    
+*/
         FunUtili::randperm(TotFeatSize,feature_sel_); // mescolo  
         for (i=0; i<FeatSelSize; ++i)
             feature_sel[i]=feature_sel_[i]; 
@@ -427,9 +430,13 @@ void Job::run(){
                 if (Print)
                     cout << endl << "------ iFRip%=" << (double)iFRip/FRip << endl << endl;  
                 UpdateFeatureSelection(); // cambio, se devo, la selezione delle features
+        //
+        // -----------------------------------------  recupero gli indici delle features ---------------------------------------
                 for (i=0; i<FeatSelSize; ++i) // recupero gli indici delle feature che ho usato
                     featNum[i][iFRip]=(double)feature_sel[i]+1.0; // per metterla nel ws di matio
                                                                   // aggiungo 1.0 per come funziona l'indicizzazione su matlab
+        // ---------------------------------------------------------------------------------------------------------------------  
+        //
 // per debug
 if (0){
     cout << endl << "feat idx" << endl; 

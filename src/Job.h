@@ -20,7 +20,7 @@ public:
                  int LabelSelIdx,                                             // info sulla label da usare
                  double *f,size_t *FeatSize,double *l,size_t *LabelSize);     // info su tutto il dataset 
 private: 
-    bool assegnato=false,addestrato=false; 
+    bool assegnato,addestrato; 
     struct svm_node *x_space; 
     struct svm_parameter param;
     struct svm_problem prob;
@@ -48,12 +48,12 @@ bool Print_, struct svm_parameter param_); */
 private:     
     string nome,qualeLabel,resFile; 
     struct svm_parameter *param;
-    bool assegnatoProblema=false,
-         assegnato_svm=false,
-         assegnatiDatiTraining=false, 
-         assegnatiDatiTest=false,
-         Print=false,
-         featRandomSelection=false; 
+    bool assegnatoProblema,
+         assegnato_svm,
+         assegnatiDatiTraining, 
+         assegnatiDatiTest,
+         Print,
+         featRandomSelection; 
     int iRip,FRip,
         TsSize,TrSize,
         TotFeatSize,FeatSelSize,

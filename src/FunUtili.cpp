@@ -71,8 +71,9 @@ void FunUtili::exit_with_help(){
 }
 
 void FunUtili::parseArguments(int argc, char **argv, 
-                              string *filename, int *DimFeatures, int *RipFeatures, int *Label,bool *Print,
-                              struct svm_parameter *param){
+                              string *filename, int *DimFeatures, int *RipFeatures, int *Label,
+                              struct svm_parameter *param, 
+                              bool *Print, bool *MultiThreading){
     // parse options
     for(int i=1;i<argc;i++){
         if(0) // DEBUG
@@ -105,16 +106,34 @@ void FunUtili::parseArguments(int argc, char **argv,
                     exit(2);
                 }
                 *Label = (int)atoi(argv[i+1]);
+            }else if(string(argv[i]) == "--multiThreading"){
+                if (i+1>=argc || argv[i+1][0] == '-'){
+                    fprintf(stderr,"You forgot to set value @ %s\n",argv[i]); 
+                    exit(2);
+                }
+                int mlt = (int)atoi(argv[i+1]);
+                if (mlt==1)
+                    *MultiThreading=true; 
+                else if (mlt==0)
+                    *MultiThreading=false;
+                else{
+                    fprintf(stderr,"Wrong argument for --multiThreading. Values can be 0 or 1\n"); 
+                    exit(2);
+                }
             }else if(string(argv[i]) == "--print"){
                 if (i+1>=argc || argv[i+1][0] == '-'){
                     fprintf(stderr,"You forgot to set value @ %s\n",argv[i]); 
                     exit(2);
                 }
                 int print = (int)atoi(argv[i+1]);
-                if (print>0)
+                if (print==1)
                     *Print=true; 
-                else
+                else if (print==0)
                     *Print=false;
+                else{
+                    fprintf(stderr,"Wrong argument for --print. Values can be 0 or 1\n"); 
+                    exit(2);
+                }
             }else{
                 fprintf(stderr,"%s is not correct. Use --help for further infos\n",argv[i]);
                 exit(1);
