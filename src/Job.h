@@ -46,7 +46,7 @@ bool Print_, struct svm_parameter param_); */
     void predictTestSet(int labelIdx);
     void predictValidationSet(double *ValidTrend,int labelIdx); 
 private:     
-    string nome,qualeLabel,resFile; 
+    string nome,path,qualeLabel,resFile; 
     struct svm_parameter *param;
     bool assegnatoProblema,
          assegnato_svm,

@@ -2,6 +2,23 @@
 
 //////////////////// FunUtili ////////////////////////
 
+string FunUtili::path2pathtofile(string path, string filename){ 
+    string pathtofile; 
+    pathtofile.assign(path.begin(), path.end()-filename.size());
+    return pathtofile; 
+}
+
+
+string FunUtili::path2filename(string path, const char* separator){ 
+    string filename;
+    size_t pos = path.find_last_of(separator);  // dipende dal sistema operativo
+    if(pos != string::npos)
+        filename.assign(path.begin() + pos + 1, path.end());
+    else
+        filename = path;
+    return filename; 
+}
+
 void FunUtili::randperm(int n,int *perm){  
     // NB: meglio se n e` la dimensione di perm. 
     //     ma funziona anche se e` un intero piu` piccolo

@@ -12,6 +12,10 @@
 using namespace std; 
 
 namespace FunUtili{
+
+    string path2pathtofile(string path, string filename); 
+    string path2filename(string path, const char* separator); 
+
     void randperm(int n,int *perm);  
     void exit_with_help();
     //void parseArguments(int argc,char **argv,string *filename,int *DimFeatures,int *RipFeatures,int *Label,struct svm_parameter *param);

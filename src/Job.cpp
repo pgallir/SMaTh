@@ -270,9 +270,12 @@ void Job::load_and_run(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,
         LabelSelIdx[0]=LabelSelIdx_; 
     }
     //
-    nome=ds.pr->nome; 
+    string percorsoCompleto=ds.pr->nome; 
+    nome=FunUtili::path2filename(percorsoCompleto,"/");
+    path=FunUtili::path2pathtofile(percorsoCompleto,nome);
     nome.erase(nome.find(".mat"));
-    resFile+=nome; resFile+="-iRip_";  resFile+=to_string(iRip); resFile+="-"; // base per il nome del file da salvare
+    resFile =path; resFile+=nome; 
+    resFile+="-iRip_";  resFile+=to_string(iRip); resFile+="-"; 
     //
     RES = new matvar_t* [3];
     TRENDs = new matvar_t* [3];
