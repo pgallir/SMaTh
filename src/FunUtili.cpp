@@ -81,12 +81,13 @@ void FunUtili::exit_with_help(){
     "\E[1m"
     "3) advanced options\n\n"
     "\E[0m"
-    "--#features : if you don't want to use all features, you can here set how many features to be used (chosen randomly)\n"
-    "              NB: you need to specify how many time you want to change them, becuse you use the same features RIP time among folds\n"
-    "              ex: '--#features 5:10' will select 10 times 5 features and simulate the problem defined in the matfile\n"
-    "--label[i] : if you don't want to run the simulations across all variables, you can here set what label should be used\n"
-    "             ex: '--label[i] 2' will select the 3rd column of OUT (see 1) matfile)\n"
-    "--print    : if followed by number greater than 0 it prints the status of the simulation on the screen (makes sense if not multithreding)\n"
+    "--#features       : if you don't want to use all features, you can here set how many features to be used (chosen randomly)\n"
+    "                    NB: you need to specify how many time you want to change them, becuse you use the same features RIP time among folds\n"
+    "                    ex: '--#features 5:10' will select 10 times 5 features and simulate the problem defined in the matfile\n"
+    "--label[i]        : if you don't want to run the simulations across all variables, you can here set what label should be used\n"
+    "                    ex: '--label[i] 2' will select the 3rd column of OUT (see 1) matfile)\n"
+    "--print           : {0,1} enables the print of the status of the simulation on the screen (if not multithreding). default is off. \n"
+    "--multiThreading  : {0,1} enables multithreading. default is off. when on, disable the print option.\n"
     "\n");
     exit(1);
 }
