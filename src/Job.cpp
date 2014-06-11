@@ -29,7 +29,8 @@ void SVModel::updateParam(struct svm_parameter *param_){
     param.svm_type = param_->svm_type;
     param.kernel_type = param_->kernel_type;
     param.degree = param_->degree;
-    param.gamma = param_->gamma; // 1/num_features
+//    if (param_->gamma!=0)  // altrimenti uso 1/num_features come suggerito da libsvm
+        param.gamma = param_->gamma; 
     param.coef0 = param_->coef0;
     param.nu = param_->nu;
     param.cache_size = param_->cache_size;
@@ -47,6 +48,10 @@ void SVModel::updateParam(struct svm_parameter *param_){
     }
     assegnatoParam=true; 
         
+
+        
+    // cout     << " dentro vale cosi` --> " << param.gamma << endl;
+
 
     //debug
     if (0){
@@ -170,6 +175,13 @@ if (0){
 			}
 		}
     const char* error_msg = svm_check_parameter(&prob, &param);
+
+
+    cout <<  " qui --->  " << param.gamma << endl;  
+    cout <<  " qui --->  " << FeatSelSize << endl;  
+
+
+
     if(error_msg)
     {
         if (error_msg != NULL)
@@ -212,8 +224,6 @@ Job::Job(){
 void Job::load_and_run(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,int LabelSelIdx_,bool Print_, struct svm_parameter param_){
     //
     Print=Print_; 
-    param=&param_; 
-    svm_.updateParam(param); // aggiorno i parametri della svm 
     iRip=iRip_;
     FRip=FeatSelRip_; 
     ds.assegnoProblema(pr_); 
@@ -244,6 +254,16 @@ void Job::load_and_run(int iRip_,Problema *pr_,int FeatSelSize_,int FeatSelRip_,
         LabelSelIdx=new int [LabelSelSize]; 
         LabelSelIdx[0]=LabelSelIdx_; 
     }
+    //
+    param=&param_; 
+    svm_.updateParam(param); // aggiorno i parametri della svm 
+    if (svm_.param.gamma==0)
+        svm_.param.gamma=1/FeatSelSize;                
+    /*    
+    cout << " ----" << FeatSelSize<<"---- "<<endl; 
+    cout << " ----" << svm_.param.gamma<<"---- "<<endl; 
+    exit(1); 
+    */
     //
     string percorsoCompleto=ds.pr->nome; 
     nome=FunUtili::path2filename(percorsoCompleto,"/");

@@ -5,6 +5,9 @@
 
 class SVModel{
 public: 
+    struct svm_parameter param;  // non puo` essere private:  
+                                 // Job deve poter impostare gamma==1/num_features
+                                 // come suggerito da libsvm 
     SVModel();
     ~SVModel(); 
     void initStrutturaDati(int LabelTrSelSize,int *label_training_selection,        // info sul Training Set
@@ -22,7 +25,6 @@ public:
 private: 
     bool assegnato,addestrato,assegnatoParam; 
     struct svm_node *x_space; 
-    struct svm_parameter param;
     struct svm_problem prob;
     struct svm_model *model;
 }; 
