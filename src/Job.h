@@ -20,7 +20,7 @@ public:
                  int LabelSelIdx,                                             // info sulla label da usare
                  double *f,size_t *FeatSize,double *l,size_t *LabelSize);     // info su tutto il dataset 
 private: 
-    bool assegnato,addestrato; 
+    bool assegnato,addestrato,assegnatoParam; 
     struct svm_node *x_space; 
     struct svm_parameter param;
     struct svm_problem prob;

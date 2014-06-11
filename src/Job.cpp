@@ -6,22 +6,8 @@
 SVModel::SVModel(){
     assegnato=false;     
     addestrato=false; 
+    assegnatoParam=false; 
     // valori di default 
-    param.svm_type = EPSILON_SVR;
-    param.kernel_type = RBF;
-    param.degree = 3;
-    param.gamma = 0; // 1/num_features
-    param.coef0 = 0;
-    param.nu = 0.5;
-    param.cache_size = 100;
-    param.C = 1;
-    param.eps = 1e-3;
-    param.p = 0.1;
-    param.shrinking = 1;
-    param.probability = 0;
-    param.nr_weight = 0;
-    param.weight_label = NULL;
-    param.weight = NULL;
 }
 
 
@@ -34,44 +20,33 @@ SVModel::~SVModel(){
     if (addestrato){
         delete [] model; 
     }
-    svm_destroy_param(&param);
+    if (assegnatoParam)
+        svm_destroy_param(&param);
 }
 
 void SVModel::updateParam(struct svm_parameter *param_){
     // XXX non testato per modelli diversi dal mio
-    if (param_->svm_type!=-1)
-        param.svm_type = param_->svm_type;
-    if (param_->kernel_type!=-1)
-        param.kernel_type = param_->kernel_type;
-    if (param_->degree!=-1)
-        param.degree = param_->degree;
-    if (param_->gamma!=-1)
-        param.gamma = param_->gamma; // 1/num_features
-    if (param_->coef0!=-1)
-        param.coef0 = param_->coef0;
-    if (param_->nu!=-1)
-        param.nu = param_->nu;
-    if (param_->cache_size!=-1)
-        param.cache_size = param_->cache_size;
-    if (param_->C!=-1)
-        param.C = param_->C;
-    if (param_->eps!=-1)
-        param.eps = param_->eps;
-    if (param_->p!=-1)
-        param.p = param_->p;
-    if (param_->shrinking!=-1)
-        param.shrinking = param_->shrinking;
-    if (param_->probability!=-1)
-        param.probability = param_->probability;
-    if (param_->nr_weight!=-1){
-        param.nr_weight = param_->nr_weight;
-        param.weight_label = new int [param.nr_weight];
-        param.weight = new double [param.nr_weight];
-        for (int i=0; i<param.nr_weight; ++i){
-            param.weight_label[i] = param_->weight_label[i];
-            param.weight[i] = param_->weight[i]; 
-        }
+    param.svm_type = param_->svm_type;
+    param.kernel_type = param_->kernel_type;
+    param.degree = param_->degree;
+    param.gamma = param_->gamma; // 1/num_features
+    param.coef0 = param_->coef0;
+    param.nu = param_->nu;
+    param.cache_size = param_->cache_size;
+    param.C = param_->C;
+    param.eps = param_->eps;
+    param.p = param_->p;
+    param.shrinking = param_->shrinking;
+    param.probability = param_->probability;
+    param.nr_weight = param_->nr_weight;
+    param.weight_label = new int [param.nr_weight];
+    param.weight = new double [param.nr_weight];
+    for (int i=0; i<param.nr_weight; ++i){
+        param.weight_label[i] = param_->weight_label[i];
+        param.weight[i] = param_->weight[i]; 
     }
+    assegnatoParam=true; 
+        
 
     //debug
     if (0){

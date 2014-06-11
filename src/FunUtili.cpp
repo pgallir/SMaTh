@@ -164,6 +164,23 @@ void FunUtili::parseArguments(int argc, char **argv,
     }
 
     // valori di default
+    param->svm_type = EPSILON_SVR;
+    param->kernel_type = RBF;
+    param->degree = 3;
+    param->gamma = 0.1; // default
+    param->coef0 = 0;
+    param->nu = 0.5;
+    param->cache_size = 100;
+    param->C = 1;
+    param->eps = 1e-3;
+    param->p = 0.1;
+    param->shrinking = 1;
+    param->probability = 0;
+    param->nr_weight = 0;
+    param->weight_label = NULL;
+    param->weight = NULL;
+    
+    /*
     param->svm_type=-1; 
     param->kernel_type=-1;
     param->degree=-1;
@@ -179,6 +196,7 @@ void FunUtili::parseArguments(int argc, char **argv,
     param->nr_weight=-1;
     param->weight_label=NULL;
     param->weight=NULL;
+    */
     // parse options
     for(int ii=1;ii<argc;ii++){
         int i=ii+1; 
