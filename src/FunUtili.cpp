@@ -68,7 +68,8 @@ void FunUtili::exit_with_help(){
     " 3 -- sigmoid: tanh(gamma*u'*v + coef0)\n"
     " 4 -- precomputed kernel (kernel values in training_set_file)\n"
     "-d degree : set degree in kernel function (default 3)\n"
-    "-g gamma : set gamma in kernel function (default 1/num_features)\n"
+    "-g gamma : set gamma in kernel function (default 0.1)"
+    "                                        (if set to 0, Job change it to1/num_features)\n"
     "-r coef0 : set coef0 in kernel function (default 0)\n"
     "-c cost : set the parameter C of C-SVC, epsilon-SVR, and nu-SVR (default 1)\n"
     "-n nu : set the parameter nu of nu-SVC, one-class SVM, and nu-SVR (default 0.5)\n"
@@ -180,23 +181,6 @@ void FunUtili::parseArguments(int argc, char **argv,
     param->weight_label = NULL;
     param->weight = NULL;
     
-    /*
-    param->svm_type=-1; 
-    param->kernel_type=-1;
-    param->degree=-1;
-    param->gamma=-1;
-    param->coef0=-1;
-    param->nu=-1; 
-    param->cache_size=-1;
-    param->C=-1;
-    param->eps=-1; 
-    param->p=-1; 
-    param->shrinking=-1;
-    param->probability=-1;
-    param->nr_weight=-1;
-    param->weight_label=NULL;
-    param->weight=NULL;
-    */
     // parse options
     for(int ii=1;ii<argc;ii++){
         int i=ii+1; 
