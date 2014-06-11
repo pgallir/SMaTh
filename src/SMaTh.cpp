@@ -11,9 +11,7 @@ int main(int argc, char** argv)
     pool tp(8); 
 
     // recupero alcuni parametri dall'esterno
-    //string file="../data/BipRW_r327_110704_var10_Best.mat"; 
-    //string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2.mat"; 
-    string file="../data/r330_BipCRW_07_19_11_DownsampingFactor3_Valid_CTRL2_MODIFICATO.mat"; 
+    string file="../data/BipRW_r327_110704_var10_Best.mat"; 
            
     int DimFeatures=-1, RipFeatures=-1, Label=-1;  
     struct svm_parameter param_;
